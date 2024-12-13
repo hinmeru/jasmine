@@ -1,6 +1,8 @@
 # Jasmine
 
-Jasmine is a spec of analytics programming language. Jasminum is a Rust + Python implementation of Jasmine engine.
+Jasmine is a spec of analytics programming language, inspired by q, rust, python etc programming languages.
+
+Jasminum is a Rust + Python implementation of Jasmine engine powered by [polars](https://pola.rs/)
 
 ## Future Plans
 

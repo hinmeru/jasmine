@@ -27,7 +27,19 @@ Exp = {
 
 Statements = { ((Exp | ReturnExp | RaiseExp) ~ ";")* ~ (Exp | ReturnExp | RaiseExp)? }
 
-ControlKeyword = { "if" | "exit" | "while" | "try" | "catch" | "return" | "raise" }
+OtherKeyword = {
+    "if"
+  | "exit"
+  | "while"
+  | "try"
+  | "catch"
+  | "return"
+  | "raise"
+  | "fn"
+  | "df"
+  | "true"
+  | "false"
+}
 
 ConditionExp = {
     SqlExp
@@ -232,7 +244,7 @@ Scalar = @{ (ASCII_DIGIT ~ (ASCII_DIGIT | "." | "-" | "D" | "T" | "n" | "b" | ":
 
 CJK        =  { HAN | HIRAGANA | KATAKANA | HANGUL | BOPOMOFO }
 Identifier = @{ (ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")*) | (CJK ~ (ASCII_ALPHANUMERIC | CJK | "_")*) }
-Keyword    =  { SqlKeyword | ControlKeyword }
+Keyword    =  { SqlKeyword | OtherKeyword }
 Id         = @{ (!Keyword ~ Identifier) | (Keyword ~ (ASCII_ALPHANUMERIC | "_")+) }
 GlobalId   = @{ Identifier ~ ("." ~ Identifier)+ }
 

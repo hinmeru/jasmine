@@ -16,24 +16,24 @@ jasminum
 
 ### Scalar
 
-| name      | format                               |
+| name      | examples                             |
 | --------- | ------------------------------------ |
+| NONE      | 0n, none                             |
 | BOOLEAN   | 1b, 0b, true, false                  |
 | INT       | 42                                   |
-| FLOAT     | 4.2, inf, -inf                       |
 | DATE      | YYYY-MM-DD                           |
 | TIME      | HH:mm:ss.sss                         |
 | DATETIME  | YYYY-MM-DD[T]HH:mm:ss.sss            |
 | TIMESTAMP | YYYY-MM-DD[D]HH:mm:ss.sssssssss      |
 | DURATION  | 00000[D]HH:mm:ss.sss,1ns,1s,1m,1h,1D |
+| FLOAT     | 4.2, inf, -inf                       |
 | STRING    | "string"                             |
 | CAT       | `cat, 'cat'                          |
-| NONE      | 0n, none                             |
 
 `datetime` and `timestamp` are with timezone information. To convert a timezone
 
-- `` t ~tz `Asia/Hong_Kong` ``
-- `` tz(t, `Asia/Hong_Kong`) ``
+- `` t ~tz `Asia/Hong_Kong ``
+- `` tz(t, `Asia/Hong_Kong) ``
 
 ### List(Mixed Data Types)
 
@@ -173,15 +173,19 @@ fn(arg1, arg2, ...)
   [ sort {series1, -series2, ...} ]
   [ take number ]
 
-fselect(dataframe, (), (), ())
-fupdate(dataframe, (), (), ())
-fdelete(dataframe, (), (), ())
+// functional query
+// select
+sel(dataframe, exprs, exprs, exprs)
+// update
+upd(dataframe, exprs, exprs, exprs)
+// delete, no group by parameter
+del(dataframe, exprs, exprs)
 ```
 
 ### Assignment
 
 ```
-var1 = expression1
+var1 = exp1
 ```
 
 ### Unary Operation
