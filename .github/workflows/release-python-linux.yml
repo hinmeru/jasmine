@@ -1,17 +1,11 @@
 name: Release Python for Linux
 
 on:
-  workflow_dispatch:
-    inputs:
-      # Latest commit to include with the release. If omitted, use the latest commit on the main branch.
-      sha:
-        description: Commit SHA
-        type: string
-      # Create the sdist and build the wheels, but do not publish to PyPI / GitHub.
-      dry-run:
-        description: Dry run
-        type: boolean
-        default: false
+  release:
+    types: [published]
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -28,15 +22,11 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        # manylinux aarch64 openssl doesn't work
-        # architecture: [x86-64, aarch64]
         architecture: [x86-64]
         python-version: ["3.11", "3.12", "3.13"]
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.sha }}
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -68,13 +58,11 @@ jobs:
         with:
           command: build
           target: ${{ steps.target.outputs.target }}
-          # before-script-linux: /opt/_internal/build_scripts/build-openssl.sh
           args: >
             --release -i ${{ matrix.python-version }}
             --manifest-path py-jasmine/Cargo.toml
             --out dist
           container: off
-          # manylinux: "2_28"
 
       - name: Upload wheel
         uses: actions/upload-artifact@v4
@@ -84,7 +72,6 @@ jobs:
 
   pypi-publish:
     name: Upload release to PyPI
-    # needs: [create-sdist, build-wheels]
     needs: [build-wheels]
     environment:
       name: pypi
@@ -94,12 +81,6 @@ jobs:
       id-token: write
 
     steps:
-      # - name: Download sdist
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: sdist
-      #     path: dist
-
       - name: Download wheels
         uses: actions/download-artifact@v4
         with:
@@ -107,7 +88,6 @@ jobs:
           merge-multiple: true
 
       - name: Publish to PyPI
-        if: inputs.dry-run == false
         uses: pypa/gh-action-pypi-publish@unstable/v1
         with:
           verbose: true
