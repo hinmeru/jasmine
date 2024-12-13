@@ -1,0 +1,36 @@
+[build-system]
+requires = ["maturin @ git+https://github.com/PyO3/maturin.git@main"]
+build-backend = "maturin"
+
+[project]
+name = "jasminum"
+description = "an implementation of the data analytics programming language jasmine"
+readme = "README.md"
+authors = [{ name = "the Jasmine authors" }]
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Rust",
+]
+keywords = ["jasmine", "jasminum", "polars", "dataframe", "arrow"]
+dynamic = ["version"]
+dependencies = [
+    'polars >= 1.17.0',
+    'pyarrow >= 18.0.0',
+    'termcolor >= 2.5.0',
+    'numpy >= 2.2.0',
+]
+
+[tool.maturin]
+include = ["rust-toolchain.toml"]
+
+[project.urls]
+Repository = "https://github.com/hinmeru/jasmine"
+
+[project.scripts]
+jasminum = "jasminum.main:main"

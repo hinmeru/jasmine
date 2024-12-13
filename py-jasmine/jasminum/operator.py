@@ -1,0 +1,345 @@
+from datetime import timedelta
+
+import numpy as np
+import polars as pl
+
+from .constant import PL_DATA_TYPE
+from .exceptions import JasmineEvalException
+from .j import J, JType
+
+
+# |           | date | time | datetime | timestamp | duration  |
+# | --------- | ---- | ---- | -------- | --------- | --------- |
+# | date      | -    | -    | -        | -         | date      |
+# | time      | -    | -    | -        | -         | -         |
+# | datetime  | -    | -    | -        | -         | duration  |
+# | timestamp | -    | -    | -        | -         | timestamp |
+# | duration  | date | -    | datetime | timestamp | duration  |
+def add(arg1: J, arg2: J) -> J:
+    if arg1.j_type == JType.EXPR or arg2.j_type == JType.EXPR:
+        return J(arg1.to_expr().add(arg2.to_expr()))
+    elif arg1.j_type == JType.NONE or arg2.j_type == JType.NONE:
+        return J(None, JType.NONE)
+    elif arg1.j_type.value <= 2 and arg2.j_type.value <= 2:
+        return J(arg1.data + arg2.data, JType.INT)
+    elif arg1.j_type == JType.DATE and arg2.j_type == JType.DURATION:
+        return J(arg1.data + timedelta(days=arg2.days()))
+    elif arg1.j_type == JType.TIMESTAMP and arg2.j_type == JType.DURATION:
+        return J.from_nanos(arg1.nanos_from_epoch() + arg2.data, arg1.tz())
+    elif arg1.j_type == JType.DATETIME and arg2.j_type == JType.DURATION:
+        return J.from_millis(arg1.data + arg2.data // 1000000, arg1.tz())
+    elif arg1.j_type == JType.DURATION and arg2.j_type == JType.DURATION:
+        return J(arg1.data + arg2.data, JType.DURATION)
+    elif (
+        arg1.j_type == JType.STRING or arg1.j_type == JType.CAT
+    ) and arg2.j_type.value <= 11:
+        return J(arg1.data + str(arg2), arg1.j_type)
+    elif (
+        arg2.j_type == JType.STRING
+        or arg2.j_type == JType.CAT
+        and arg1.j_type.value <= 11
+    ):
+        return J(str(arg1) + arg2.data, arg2.j_type)
+    elif arg1.j_type == JType.SERIES and arg2.j_type.value <= 11:
+        if arg2.is_temporal_scalar():
+            return J(arg1.data + arg2.to_series())
+        else:
+            return J(arg1.data + arg2.data)
+    elif (
+        arg1.j_type == JType.DURATION and arg2.j_type.value >= 3 and arg2.j_type <= 6
+    ) or (arg1.j_type.value <= 10 and arg2.j_type == JType.SERIES):
+        return add(arg2, arg1)
+    else:
+        raise JasmineEvalException(
+            "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
+                "add", arg1.j_type.name, arg2.j_type.name
+            )
+        )
+
+
+def sub(arg1: J, arg2: J) -> J:
+    if arg1.j_type == JType.EXPR or arg2.j_type == JType.EXPR:
+        return J(arg1.to_expr().sub(arg2.to_expr()))
+    else:
+        raise JasmineEvalException(
+            "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
+                "-", arg1.j_type.name, arg2.j_type.name
+            )
+        )
+
+
+def pow(arg1: J, arg2: J) -> J:
+    if arg1.j_type == JType.EXPR or arg2.j_type == JType.EXPR:
+        return J(arg1.to_expr().pow(arg2.to_expr()))
+    else:
+        raise JasmineEvalException(
+            "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
+                "**", arg1.j_type.name, arg2.j_type.name
+            )
+        )
+
+
+def mul(arg1: J, arg2: J) -> J:
+    if arg1.j_type == JType.EXPR or arg2.j_type == JType.EXPR:
+        return J(arg1.to_expr().mul(arg2.to_expr()))
+    else:
+        raise JasmineEvalException(
+            "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
+                "*", arg1.j_type.name, arg2.j_type.name
+            )
+        )
+
+
+def true_div(arg1: J, arg2: J) -> J:
+    if arg1.j_type == JType.EXPR or arg2.j_type == JType.EXPR:
+        return J(arg1.to_expr().truediv(arg2.to_expr()))
+    else:
+        raise JasmineEvalException(
+            "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
+                "/", arg1.j_type.name, arg2.j_type.name
+            )
+        )
+
+
+def mod(arg1: J, arg2: J) -> J:
+    if arg1.j_type == JType.EXPR or arg2.j_type == JType.EXPR:
+        return J(arg1.to_expr().mod(arg2.to_expr()))
+    else:
+        raise JasmineEvalException(
+            "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
+                "%", arg1.j_type.name, arg2.j_type.name
+            )
+        )
+
+
+def bin_min(arg1: J, arg2: J) -> J:
+    if arg1.j_type == JType.EXPR or arg2.j_type == JType.EXPR:
+        return J(arg1.to_expr().min(arg2.to_expr()))
+    else:
+        raise JasmineEvalException(
+            "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
+                "&", arg1.j_type.name, arg2.j_type.name
+            )
+        )
+
+
+def bin_max(arg1: J, arg2: J) -> J:
+    if arg1.j_type == JType.EXPR or arg2.j_type == JType.EXPR:
+        return J(arg1.to_expr().max(arg2.to_expr()))
+    else:
+        raise JasmineEvalException(
+            "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
+                "|", arg1.j_type.name, arg2.j_type.name
+            )
+        )
+
+
+def rand(size: J, base: J) -> J:
+    if size.j_type == JType.INT:
+        if base.j_type == JType.INT:
+            return J(pl.Series("", np.random.randint(base.data, size=size.data)))
+        elif base.j_type == JType.FLOAT:
+            return J(pl.Series("", base.data * np.random.rand(size.data)))
+        elif base.j_type == JType.SERIES:
+            return J(base.data.sample(abs(size.data), with_replacement=size.data > 0))
+        elif base.j_type == JType.DATAFRAME:
+            return J(base.data.sample(abs(size.data), with_replacement=size.data > 0))
+    else:
+        raise JasmineEvalException(
+            "'rand' requires 'int' and 'int|float', got '%s' and '%s'"
+            % (size.j_type, size.j_type)
+        )
+
+
+def cast(type_name: J, arg: J) -> J:
+    name = type_name.to_str()
+    if name not in PL_DATA_TYPE and name not in [
+        "year",
+        "month",
+        "month_start",
+        "month_end",
+        "weekday",
+        "day",
+        "dt",
+        "hour",
+        "minute",
+        "second",
+        "ms",
+        "ns",
+    ]:
+        raise JasmineEvalException("unknown data type for 'cast': %s" % name)
+    if arg.j_type == JType.EXPR:
+        match name:
+            case name if name in PL_DATA_TYPE:
+                return arg.data.cast(PL_DATA_TYPE[name])
+            case "year":
+                return arg.data.dt.year()
+            case "month":
+                return arg.data.dt.month()
+            case "month_start":
+                return arg.data.dt.month_start()
+            case "month_end":
+                return arg.data.dt.month_end()
+            case "weekday":
+                return arg.data.dt.weekday()
+            case "day":
+                return arg.data.dt.day()
+            case "dt":
+                return arg.data.dt.date()
+            case "hour":
+                return arg.data.dt.hour()
+            case "minute":
+                return arg.data.dt.minute()
+            case "second":
+                return arg.data.dt.second()
+            case "t":
+                return arg.data.dt.time()
+            case "ms":
+                return arg.data.dt.millisecond()
+            case "ns":
+                return arg.data.dt.nanosecond()
+    elif arg.j_type == JType.SERIES:
+        if name in PL_DATA_TYPE:
+            return J(arg.data.cast(PL_DATA_TYPE[name]))
+        else:
+            match name:
+                case "year":
+                    return J(arg.data.dt.year())
+                case "month":
+                    return J(arg.data.dt.month())
+                case "month_start":
+                    return J(arg.data.dt.month_start())
+                case "month_end":
+                    return J(arg.data.dt.month_end())
+                case "weekday":
+                    return J(arg.data.dt.weekday())
+                case "day":
+                    return J(arg.data.dt.day())
+                case "dt":
+                    return J(arg.data.dt.date())
+                case "hour":
+                    return J(arg.data.dt.hour())
+                case "minute":
+                    return J(arg.data.dt.minute())
+                case "second":
+                    return J(arg.data.dt.second())
+                case "t":
+                    return J(arg.data.dt.time())
+                case "ms":
+                    return J(arg.data.dt.millisecond())
+                case "ns":
+                    return J(arg.data.dt.nanosecond())
+
+
+def not_equal(arg1: J, arg2: J) -> J:
+    if arg1.j_type == JType.EXPR or arg2.j_type == JType.EXPR:
+        return J(arg1.to_expr().ne_missing(arg2.to_expr()))
+    else:
+        raise JasmineEvalException(
+            "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
+                "!=", arg1.j_type.name, arg2.j_type.name
+            )
+        )
+
+
+def less_equal(arg1: J, arg2: J) -> J:
+    if arg1.j_type == JType.EXPR or arg2.j_type == JType.EXPR:
+        return J(arg1.to_expr().le(arg2.to_expr()))
+    else:
+        raise JasmineEvalException(
+            "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
+                "<=", arg1.j_type.name, arg2.j_type.name
+            )
+        )
+
+
+def great_equal(arg1: J, arg2: J) -> J:
+    if arg1.j_type == JType.EXPR or arg2.j_type == JType.EXPR:
+        return J(arg1.to_expr().ge(arg2.to_expr()))
+    else:
+        raise JasmineEvalException(
+            "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
+                ">=", arg1.j_type.name, arg2.j_type.name
+            )
+        )
+
+
+def less_than(arg1: J, arg2: J) -> J:
+    if arg1.j_type == JType.EXPR or arg2.j_type == JType.EXPR:
+        return J(arg1.to_expr().lt(arg2.to_expr()))
+    else:
+        raise JasmineEvalException(
+            "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
+                "<", arg1.j_type.name, arg2.j_type.name
+            )
+        )
+
+
+def great_than(arg1: J, arg2: J) -> J:
+    if arg1.j_type == JType.EXPR or arg2.j_type == JType.EXPR:
+        return J(arg1.to_expr().gt(arg2.to_expr()))
+    else:
+        raise JasmineEvalException(
+            "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
+                ">", arg1.j_type.name, arg2.j_type.name
+            )
+        )
+
+
+def equal(arg1: J, arg2: J) -> J:
+    if arg1.j_type == JType.EXPR or arg2.j_type == JType.EXPR:
+        return J(arg1.to_expr().eq(arg2.to_expr()))
+    else:
+        raise JasmineEvalException(
+            "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
+                "==", arg1.j_type.name, arg2.j_type.name
+            )
+        )
+
+
+def get(arg1: J, arg2: J) -> J:
+    if arg1.j_type == JType.EXPR or arg2.j_type == JType.EXPR:
+        return J(arg1.to_expr().get(arg2.to_expr()))
+    else:
+        raise JasmineEvalException(
+            "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
+                "@", arg1.j_type.name, arg2.j_type.name
+            )
+        )
+
+
+def concat_list(arg1: J, arg2: J) -> J:
+    if arg1.j_type == JType.EXPR or arg2.j_type == JType.EXPR:
+        return J(pl.concat_list([arg1.to_expr(), arg2.to_expr()]))
+    else:
+        raise JasmineEvalException(
+            "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
+                "++", arg1.j_type.name, arg2.j_type.name
+            )
+        )
+
+
+def take(n: J, arg: J) -> J:
+    if arg.j_type == JType.EXPR:
+        num = n.int()
+        if num >= 0:
+            return J(pl.Expr.head(arg.to_expr(), num))
+        else:
+            return J(pl.Expr.tail(arg.to_expr(), abs(num)))
+    else:
+        raise JasmineEvalException(
+            "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
+                "#", n.j_type.name, arg.j_type.name
+            )
+        )
+
+
+def xor(arg1: J, arg2: J) -> J:
+    if arg1.j_type == JType.EXPR or arg2.j_type == JType.EXPR:
+        return J(arg1.to_expr().xor(arg2.to_expr()))
+    else:
+        raise JasmineEvalException(
+            "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
+                "^", arg1.j_type.name, arg2.j_type.name
+            )
+        )

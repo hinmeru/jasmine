@@ -1,0 +1,8 @@
+polars>=1.17.0
+pyarrow>=18.0.0
+maturin>=1.7.8
+pytest>=8.3.4
+numpy>=2.2.0
+termcolor
+patchelf
+setuptools

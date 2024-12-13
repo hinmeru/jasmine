@@ -1,0 +1,27 @@
+[package]
+name = "jasmine"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+description.workspace = true
+
+[dependencies]
+pest = { version = "2.7.14", features = ["pretty-print"] }
+pest_derive = "2.7.14"
+chrono = "0.4.38"
+thiserror = "2.0.3"
+anyhow = "1.0.93"
+indexmap = "2.6.0"
+ndarray = "0.16.1"
+regex = "1.11.1"
+
+[dependencies.polars]
+workspace = true
+features = [
+  "dtype-u8",
+  "dtype-u16",
+  "dtype-i8",
+  "dtype-i16",
+  "dtype-categorical",
+  "ndarray",
+]

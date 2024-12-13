@@ -1,0 +1,21 @@
+[workspace.package]
+version = "0.2.1"
+edition = "2021"
+authors = ["the Jasmine authors"]
+description = "jasmine"
+
+[workspace]
+resolver = "2"
+members = ["crates/*", "py-jasmine"]
+
+[profile.release]
+strip = true
+opt-level = 3
+codegen-units = 3
+
+[profile.release-lto]
+inherits = "release"
+lto = true
+
+[workspace.dependencies.polars]
+version = "0.45.1"
