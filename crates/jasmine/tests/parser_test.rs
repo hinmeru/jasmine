@@ -222,8 +222,8 @@ fn parse_case02() {
 #[test]
 fn parse_case02_01() {
     let code = "
-    select from df where col!=1 sort col1,-col2 take 10;
-    delete col1, col2, col3 from df;
+    select from df0 where col!=1 sort col1,-col2 take 10;
+    delete col1, col2, col3 from df0;
     ";
     let pairs = match JParser::parse(Rule::Program, code) {
         Ok(p) => p,

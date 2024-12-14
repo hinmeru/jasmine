@@ -60,6 +60,25 @@ def add(arg1: J, arg2: J) -> J:
 def sub(arg1: J, arg2: J) -> J:
     if arg1.j_type == JType.EXPR or arg2.j_type == JType.EXPR:
         return J(arg1.to_expr().sub(arg2.to_expr()))
+    elif arg1.j_type == JType.NONE or arg2.j_type == JType.NONE:
+        return J(None, JType.NONE)
+    elif arg1.j_type.value <= 2 and arg2.j_type.value <= 2:
+        return J(arg1.data - arg2.data, JType.INT)
+    elif arg1.j_type == JType.DATE and arg2.j_type == JType.DURATION:
+        return J(arg1.data - timedelta(days=arg2.days()))
+    elif arg1.j_type == JType.TIMESTAMP and arg2.j_type == JType.DURATION:
+        return J.from_nanos(arg1.nanos_from_epoch() - arg2.data, arg1.tz())
+    elif arg1.j_type == JType.DATETIME and arg2.j_type == JType.DURATION:
+        return J.from_millis(arg1.data - arg2.data // 1000000, arg1.tz())
+    elif arg1.j_type == JType.DURATION and arg2.j_type == JType.DURATION:
+        return J(arg1.data - arg2.data, JType.DURATION)
+    elif (arg1.j_type == JType.SERIES and arg2.j_type.value <= 11) or (
+        arg2.j_type == JType.SERIES and arg1.j_type.value <= 11
+    ):
+        if arg2.is_temporal_scalar():
+            return J(arg1.data - arg2.to_series())
+        else:
+            return J(arg1.data - arg2.data)
     else:
         raise JasmineEvalException(
             "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(

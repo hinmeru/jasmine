@@ -1,4 +1,4 @@
-name: Release Python for Linux
+name: Release Python
 
 on:
   release:

@@ -240,7 +240,7 @@ Series = { "[" ~ (Unknown ~ ",")* ~ Unknown? ~ "]" }
 
 SeriesAlt = { Scalar ~ Scalar+ }
 
-Scalar = @{ (ASCII_DIGIT ~ (ASCII_DIGIT | "." | "-" | "D" | "T" | "n" | "b" | ":" | "u" | "i" | "f")*) }
+Scalar = @{ "-"? ~ (ASCII_DIGIT ~ (ASCII_DIGIT | "." | "-" | "D" | "T" | "n" | "b" | ":" | "u" | "i" | "f" | "s" | "m" | "h")*) }
 
 CJK        =  { HAN | HIRAGANA | KATAKANA | HANGUL | BOPOMOFO }
 Identifier = @{ (ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")*) | (CJK ~ (ASCII_ALPHANUMERIC | CJK | "_")*) }
