@@ -107,12 +107,14 @@ def next(arg: J) -> J:
         )
 
 
-def null(arg: J) -> J:
+def isnull(arg: J) -> J:
     if arg.j_type == JType.EXPR:
         return J(arg.to_expr().is_null())
     else:
         raise JasmineEvalException(
-            "unsupported operand type for '{0}': '{1}'".format("null", arg.j_type.name)
+            "unsupported operand type for '{0}': '{1}'".format(
+                "isnull", arg.j_type.name
+            )
         )
 
 

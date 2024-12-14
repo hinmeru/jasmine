@@ -18,7 +18,7 @@ jasminum
 
 | name      | examples                             |
 | --------- | ------------------------------------ |
-| NONE      | 0n, none                             |
+| Null      | 0n, null                             |
 | BOOLEAN   | 1b, 0b, true, false                  |
 | INT       | 42                                   |
 | DATE      | YYYY-MM-DD                           |
@@ -38,7 +38,7 @@ jasminum
 ### List(Mixed Data Types)
 
 ```
-l[1, none, `cat]
+l[1, null, `cat]
 ```
 
 ### Series
@@ -71,7 +71,7 @@ l[1, none, `cat]
 `i8$[]
 
 // non-empty series
-[true, none, false]
+[true, null, false]
 [0i8, 1, 2]
 ```
 
@@ -85,8 +85,8 @@ df[series1= `i32$[], series2= `f32$[]]
 
 
 // non-empty series
-df[series1 = `i32$[ , , ], series2 = `f32$[none, 2.0, 3.0]]
-df[series1 = [0i32, , ], series2 = [none, 2.0, 3.0]]
+df[series1 = `i32$[ , , ], series2 = `f32$[null, 2.0, 3.0]]
+df[series1 = [0i32, , ], series2 = [null, 2.0, 3.0]]
 ```
 
 ### Matrix (nyi)
@@ -98,7 +98,7 @@ a 2d float array
 x[[], [], []]
 
 // non-empty matrix
-x[[1, 2], [2, 3], [4, None]]
+x[[1, 2], [2, 3], [4, null]]
 ```
 
 ### Dictionary

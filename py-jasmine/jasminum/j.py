@@ -12,7 +12,7 @@ from .util import date_to_num
 
 
 class JType(Enum):
-    NONE = 0
+    NULL = 0
     BOOLEAN = 1
     INT = 2
     DATE = 3
@@ -81,17 +81,36 @@ class JParted:
 
 class J:
     data: (
-        JObj | date | int | float | pl.Series | pl.DataFrame | JParted | pl.Expr | list
+        JObj
+        | date
+        | int
+        | float
+        | pl.Series
+        | pl.DataFrame
+        | JParted
+        | pl.Expr
+        | list
+        | dict
     )
     j_type: JType
 
-    def __init__(self, data, j_type=JType.NONE) -> None:
+    def __init__(self, data, j_type=JType.NULL) -> None:
         self.data = data
         if isinstance(data, JObj):
             self.j_type = JType(data.j_type)
             match self.j_type:
                 case JType.DATETIME | JType.TIMESTAMP:
                     self.data = data
+                case JType.LIST:
+                    py_list = data.as_py()
+                    for i, j_obj in enumerate(py_list):
+                        py_list[i] = J(j_obj, j_obj.j_type)
+                    self.data = py_list
+                case JType.DICT:
+                    py_dict = data.as_py()
+                    for k, v in py_dict.items():
+                        py_dict[k] = J(v, v.j_type)
+                    self.data = py_dict
                 case _:
                     self.data = data.as_py()
         elif isinstance(data, pl.Series):
@@ -108,14 +127,17 @@ class J:
             self.j_type = JType.EXPR
         elif isinstance(data, list):
             self.j_type = JType.LIST
+        elif isinstance(data, dict):
+            self.j_type = JType.DICT
         else:
             self.j_type = j_type
 
     def __str__(self) -> str:
         match JType(self.j_type):
+            case JType.NULL:
+                return "0n"
             case (
-                JType.NONE
-                | JType.BOOLEAN
+                JType.BOOLEAN
                 | JType.INT
                 | JType.FLOAT
                 | JType.SERIES
@@ -153,8 +175,31 @@ class J:
                 return f"{neg}{days}D{HH:02d}:{mm:02d}:{ss:02d}:{sss:09d}"
             case JType.PARTED:
                 return str(self.data)
+            case JType.LIST:
+                output = "l[\n"
+                for j in self.data:
+                    output += f"  {j.short_format()},\n"
+                return output + "]"
+            case JType.DICT:
+                key_length = max(map(lambda x: len(x), self.data.keys())) + 1
+                output = "{\n"
+                for k, v in self.data.items():
+                    output += (
+                        f"  '{k}'{" " * (key_length-len(k))}: {v.short_format()},\n"
+                    )
+                output += "}"
+                return output
             case _:
                 return repr(self)
+
+    def short_format(self) -> str:
+        match JType(self.j_type):
+            case JType.DICT:
+                return f"{{{", ".join(self.data.keys())}}}"
+            case JType.LIST:
+                return f"[{", ".join(map(lambda x: x.short_format(), self.data))}]"
+            case _:
+                return str(self)
 
     def __repr__(self) -> str:
         return "<%s - %s>" % (self.j_type.name, self.data)
@@ -235,7 +280,7 @@ class J:
 
     def to_series(self) -> pl.Series:
         match self.j_type:
-            case JType.NONE:
+            case JType.NULL:
                 return pl.Series("", [None], pl.Null)
             case JType.INT | JType.FLOAT | JType.DATE:
                 return pl.Series("", [self.data])
@@ -259,7 +304,7 @@ class J:
 
     def to_expr(self) -> pl.Expr:
         match self.j_type:
-            case JType.NONE | JType.INT | JType.DATE | JType.FLOAT | JType.SERIES:
+            case JType.NULL | JType.INT | JType.DATE | JType.FLOAT | JType.SERIES:
                 return pl.lit(self.data)
             case JType.TIME:
                 return pl.lit(pl.Series("", [self.data], pl.Time))

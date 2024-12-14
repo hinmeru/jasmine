@@ -46,7 +46,7 @@ def import_path(path: str, engine: Engine):
 
 def eval_src(source_code: str, source_id: int, engine: Engine, ctx: Context) -> J:
     nodes = parse_source_code(source_code, source_id)
-    res = J(None, JType.NONE)
+    res = J(None, JType.NULL)
     for node in nodes:
         res = eval_node(node, engine, ctx, False)
         if res == JType.RETURN:
@@ -383,7 +383,7 @@ def eval_sql(
                 df = df.head(n)
             else:
                 df = df.tail(n)
-        elif take.j_type == JType.NONE:
+        elif take.j_type == JType.NULL:
             pass
         else:
             raise JasmineEvalException(

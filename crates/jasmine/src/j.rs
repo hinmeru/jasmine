@@ -19,7 +19,7 @@ pub enum J {
     String(String),                          // -13
     Cat(String),                             // -14
 
-    None, // 0
+    Null, // 0
 
     Series(Series), // 1-14 -> Arrow IPC
 
@@ -63,7 +63,7 @@ impl J {
                 .cast(&DataType::Categorical(None, CategoricalOrdering::Lexical))
                 .unwrap()),
             J::String(s) => Ok(Series::new("".into(), vec![s.to_owned()])),
-            J::None => Ok(Series::new_null("".into(), 1)),
+            J::Null => Ok(Series::new_null("".into(), 1)),
             _ => Err("cannot turn into a series".to_owned()),
         }
     }
@@ -108,7 +108,7 @@ impl J {
             J::Dict(_) => "dict".to_owned(),
             J::DataFrame(_) => "df".to_owned(),
             J::Err(_) => "err".to_owned(),
-            J::None => "none".to_owned(),
+            J::Null => "null".to_owned(),
         }
     }
 }

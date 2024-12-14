@@ -13,7 +13,7 @@ def wpart(
     hdb_path: J, partition: J, table: J, df: J, sort_series: J, rechunk: J, overwrite: J
 ) -> J:
     base_path = Path(hdb_path.to_str())
-    partition.assert_types([JType.INT, JType.DATE, JType.NONE])
+    partition.assert_types([JType.INT, JType.DATE, JType.NULL])
     partition = (
         partition.date_num() if partition.j_type == JType.DATE else partition.data
     )

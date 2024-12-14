@@ -18,8 +18,8 @@ from .j import J, JType
 def add(arg1: J, arg2: J) -> J:
     if arg1.j_type == JType.EXPR or arg2.j_type == JType.EXPR:
         return J(arg1.to_expr().add(arg2.to_expr()))
-    elif arg1.j_type == JType.NONE or arg2.j_type == JType.NONE:
-        return J(None, JType.NONE)
+    elif arg1.j_type == JType.NULL or arg2.j_type == JType.NULL:
+        return J(None, JType.NULL)
     elif arg1.j_type.value <= 2 and arg2.j_type.value <= 2:
         return J(arg1.data + arg2.data, JType.INT)
     elif arg1.j_type == JType.DATE and arg2.j_type == JType.DURATION:
@@ -60,8 +60,8 @@ def add(arg1: J, arg2: J) -> J:
 def sub(arg1: J, arg2: J) -> J:
     if arg1.j_type == JType.EXPR or arg2.j_type == JType.EXPR:
         return J(arg1.to_expr().sub(arg2.to_expr()))
-    elif arg1.j_type == JType.NONE or arg2.j_type == JType.NONE:
-        return J(None, JType.NONE)
+    elif arg1.j_type == JType.NULL or arg2.j_type == JType.NULL:
+        return J(None, JType.NULL)
     elif arg1.j_type.value <= 2 and arg2.j_type.value <= 2:
         return J(arg1.data - arg2.data, JType.INT)
     elif arg1.j_type == JType.DATE and arg2.j_type == JType.DURATION:

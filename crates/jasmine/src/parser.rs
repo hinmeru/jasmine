@@ -2,6 +2,7 @@ use crate::ast_node::AstNode;
 use crate::j::J;
 use chrono;
 use chrono::Datelike;
+use indexmap::IndexMap;
 use pest::error::{Error as PestError, ErrorVariant};
 use pest::Span;
 use pest::{iterators::Pair, Parser};
@@ -78,7 +79,7 @@ fn parse_exp(pair: Pair<Rule>, source_id: usize) -> Result<AstNode, PestError<Ru
         | Rule::CatAlt
         | Rule::Cat
         | Rule::String
-        | Rule::None => parse_j(pair),
+        | Rule::Null => parse_j(pair),
         Rule::Series | Rule::SeriesAlt => parse_series(pair),
         Rule::Cats => parse_cats(pair),
         Rule::AssignmentExp => {
@@ -339,21 +340,47 @@ fn parse_exp(pair: Pair<Rule>, source_id: usize) -> Result<AstNode, PestError<Ru
         Rule::List => {
             let pairs = pair.into_inner();
             let mut list = Vec::with_capacity(pairs.len());
+            let mut all_j = true;
             for pair in pairs {
-                list.push(parse_list(pair, source_id)?)
+                let ast = parse_list(pair, source_id)?;
+                if let AstNode::J(_) = &ast {
+                } else {
+                    all_j = false
+                }
+                list.push(ast)
             }
-            Ok(AstNode::List(list))
+            if all_j {
+                Ok(AstNode::J(J::MixedList(
+                    list.into_iter().map(|a| a.as_j().unwrap()).collect(),
+                )))
+            } else {
+                Ok(AstNode::List(list))
+            }
         }
         Rule::Dict => {
             let pairs = pair.into_inner();
             let mut keys: Vec<String> = Vec::with_capacity(pairs.len());
             let mut values: Vec<AstNode> = Vec::with_capacity(pairs.len());
+            let mut all_j = true;
             for pair in pairs {
                 let mut kv = pair.into_inner();
                 keys.push(kv.next().unwrap().as_str().to_owned());
-                values.push(parse_exp(kv.next().unwrap(), source_id)?)
+                let value = parse_exp(kv.next().unwrap(), source_id)?;
+                if let AstNode::J(_) = &value {
+                } else {
+                    all_j = false
+                }
+                values.push(value);
             }
-            Ok(AstNode::Dict { keys, values })
+            if all_j {
+                let dict = IndexMap::from_iter(
+                    keys.into_iter()
+                        .zip(values.into_iter().map(|a| a.as_j().unwrap())),
+                );
+                Ok(AstNode::J(J::Dict(dict)))
+            } else {
+                Ok(AstNode::Dict { keys, values })
+            }
         }
         unexpected_exp => Err(raise_error(
             format!("Unexpected rule: {:?}", unexpected_exp),
@@ -388,7 +415,7 @@ macro_rules! impl_parse_num {
                     } else {
                         s
                     };
-                    if s.is_empty() || s == "none" || s == "0n" {
+                    if s.is_empty() || s == "null" || s == "0n" {
                         return Ok(None);
                     } else {
                         return s
@@ -423,7 +450,7 @@ fn parse_series(pair: Pair<Rule>) -> Result<AstNode, PestError<Rule>> {
     let unknowns: Vec<&str> = pair.into_inner().map(|p| p.as_str()).collect();
     let len = unknowns.len();
     for scalar in unknowns.iter() {
-        if !scalar.is_empty() && *scalar != "none" && *scalar != "0n" {
+        if !scalar.is_empty() && *scalar != "null" && *scalar != "0n" {
             first_scalar = scalar;
             break;
         }
@@ -454,7 +481,7 @@ fn parse_series(pair: Pair<Rule>) -> Result<AstNode, PestError<Rule>> {
         r"^-?\d+(ns|s|m|h)$",
         r"^'[^']*'$",
         r#"^"[^"]*"$"#,
-        r"(^(none|0n)$|^$)",
+        r"(^(null|0n)$|^$)",
     ])
     .unwrap();
 
@@ -470,7 +497,7 @@ fn parse_series(pair: Pair<Rule>) -> Result<AstNode, PestError<Rule>> {
                     "1b" => bools.push(Some(true)),
                     "false" => bools.push(Some(false)),
                     "0b" => bools.push(Some(false)),
-                    "none" | "0n" | "" => bools.push(None),
+                    "null" | "0n" | "" => bools.push(None),
                     _ => {
                         return Err(raise_error(
                             format!("unrecognized bool value {}", bool),
@@ -496,7 +523,7 @@ fn parse_series(pair: Pair<Rule>) -> Result<AstNode, PestError<Rule>> {
             let dates = unknowns
                 .iter()
                 .map(|s| {
-                    if *s == "" || *s == "none" || *s == "0n" {
+                    if *s == "" || *s == "null" || *s == "0n" {
                         Ok(None)
                     } else {
                         parse_date(s)
@@ -515,7 +542,7 @@ fn parse_series(pair: Pair<Rule>) -> Result<AstNode, PestError<Rule>> {
             let times = unknowns
                 .iter()
                 .map(|s| {
-                    if *s == "" || *s == "none" || *s == "0n" {
+                    if *s == "" || *s == "null" || *s == "0n" {
                         Ok(None)
                     } else {
                         parse_time(*s)
@@ -534,7 +561,7 @@ fn parse_series(pair: Pair<Rule>) -> Result<AstNode, PestError<Rule>> {
             let datetimes = unknowns
                 .iter()
                 .map(|s| {
-                    if *s == "" || *s == "none" || *s == "0n" {
+                    if *s == "" || *s == "null" || *s == "0n" {
                         Ok(None)
                     } else {
                         parse_datetime(*s)
@@ -553,7 +580,7 @@ fn parse_series(pair: Pair<Rule>) -> Result<AstNode, PestError<Rule>> {
             let timestamps = unknowns
                 .iter()
                 .map(|s| {
-                    if *s == "" || *s == "none" || *s == "0n" {
+                    if *s == "" || *s == "null" || *s == "0n" {
                         Ok(None)
                     } else {
                         parse_timestamp(*s)
@@ -572,7 +599,7 @@ fn parse_series(pair: Pair<Rule>) -> Result<AstNode, PestError<Rule>> {
             let times = unknowns
                 .iter()
                 .map(|s| {
-                    if *s == "" || *s == "none" || *s == "0n" {
+                    if *s == "" || *s == "null" || *s == "0n" {
                         Ok(None)
                     } else {
                         parse_duration(*s)
@@ -593,7 +620,7 @@ fn parse_series(pair: Pair<Rule>) -> Result<AstNode, PestError<Rule>> {
                 .map(|s| {
                     if Regex::new(r"^'[^']*'$").unwrap().is_match(s.as_bytes()) {
                         Ok(Some(s[1..s.len() - 1].to_owned()))
-                    } else if *s == "" || *s == "none" || *s == "0n" {
+                    } else if *s == "" || *s == "null" || *s == "0n" {
                         Ok(None)
                     } else {
                         Err(raise_error(
@@ -618,7 +645,7 @@ fn parse_series(pair: Pair<Rule>) -> Result<AstNode, PestError<Rule>> {
                 .map(|s| {
                     if Regex::new(r#"^"[^"]*"$"#).unwrap().is_match(s.as_bytes()) {
                         Ok(Some(s[1..s.len() - 1].to_owned()))
-                    } else if *s == "" || *s == "none" || *s == "0n" {
+                    } else if *s == "" || *s == "null" || *s == "0n" {
                         Ok(None)
                     } else {
                         Err(raise_error(format!("'{}': {}", s, "not a string"), span))
@@ -692,7 +719,7 @@ fn parse_j(pair: Pair<Rule>) -> Result<AstNode, PestError<Rule>> {
             // Escaped string quotes become single quotes here.
             Ok(AstNode::J(J::String(str.to_owned())))
         }
-        Rule::None => Ok(AstNode::J(J::None)),
+        Rule::Null => Ok(AstNode::J(J::Null)),
         unexpected_exp => Err(raise_error(
             format!("Unexpected j: {:?}", unexpected_exp),
             pair.as_span(),
@@ -722,7 +749,7 @@ fn parse_sql(pair: Pair<Rule>, source_id: usize) -> Result<AstNode, PestError<Ru
     let mut from: AstNode = AstNode::Skip;
     let mut filters: Vec<AstNode> = Vec::new();
     let mut sorts: Vec<AstNode> = Vec::new();
-    let mut take = AstNode::J(J::None);
+    let mut take = AstNode::J(J::Null);
     let mut group_type = "by";
     while let Some(some_pair) = pairs.next() {
         match some_pair.as_rule() {

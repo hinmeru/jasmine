@@ -1,12 +1,9 @@
 use chrono::{DateTime, NaiveDate};
 use chrono_tz::Tz;
+use indexmap::IndexMap;
 use jasmine::{j::J, UNIX_EPOCH_DAY};
 use numpy::ToPyArray;
-use pyo3::{
-    pyclass, pymethods,
-    types::{PyDict, PyDictMethods, PyTuple},
-    IntoPy, PyObject, PyResult, Python, ToPyObject,
-};
+use pyo3::{pyclass, pymethods, IntoPy, PyObject, PyResult, Python, ToPyObject};
 use pyo3_polars::{PyDataFrame, PySeries};
 
 use crate::error::PyJasmineErr;
@@ -123,22 +120,22 @@ impl JObj {
             J::F64(v) => Ok(v.into_py(py)),
             J::String(v) => Ok(v.into_py(py)),
             J::Cat(v) => Ok(v.into_py(py)),
-            J::None => Ok(().to_object(py)),
+            J::Null => Ok(().to_object(py)),
             J::Series(series) => Ok(PySeries(series.clone()).into_py(py)),
             J::Matrix(matrix) => Ok(matrix.to_pyarray_bound(py).into()),
             J::MixedList(l) => {
-                let py_objects = l
+                let list = l
                     .into_iter()
-                    .map(|k| JObj::new(k.clone()).as_py(py))
-                    .collect::<PyResult<Vec<PyObject>>>()?;
-                Ok(PyTuple::new_bound(py, py_objects).into())
+                    .map(|k| JObj::new(k.clone()))
+                    .collect::<Vec<_>>();
+                Ok(list.into_py(py))
             }
             J::Dict(dict) => {
-                let py_dict = PyDict::new_bound(py);
+                let mut new_dict: IndexMap<String, JObj> = IndexMap::new();
                 for (k, v) in dict.into_iter() {
-                    py_dict.set_item(k, JObj::new(v.clone()).as_py(py)?)?;
+                    new_dict.insert(k.to_string(), JObj::new(v.to_owned()));
                 }
-                Ok(py_dict.into())
+                Ok(new_dict.into_py(py))
             }
             J::DataFrame(data_frame) => Ok(PyDataFrame(data_frame.clone()).into_py(py)),
             J::Err(v) => Err(PyJasmineErr::new_err(v.to_string()).into()),
@@ -149,7 +146,7 @@ impl JObj {
 impl JObj {
     pub fn new(j: J) -> Self {
         let j_type = match j {
-            J::None => JType::None,
+            J::Null => JType::None,
             J::Boolean(_) => JType::Boolean,
             J::I64(_) => JType::I64,
             J::Date(_) => JType::Date,

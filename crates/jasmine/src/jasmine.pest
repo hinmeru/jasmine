@@ -111,7 +111,7 @@ Term = _{
   | CatAlt
   | Cat
   | Boolean
-  | None
+  | Null
   | Timestamp
   | Datetime
   | Duration
@@ -233,7 +233,7 @@ Duration  = @{ (Integer ~ "D" ~ Time?) | (Integer ~ ("ns" | "s" | "m" | "h")) }
 Integer   = @{ "-"? ~ ASCII_DIGIT+ }
 Decimal   = @{ "-"? ~ (ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT* | "inf") }
 Boolean   =  { ("true" | "false" | "0b" | "1b") }
-None      =  { "none" | "0n" }
+Null      =  { "null" | "0n" }
 Unknown   =  { (!("," | "]") ~ ANY)* }
 
 Series = { "[" ~ (Unknown ~ ",")* ~ Unknown? ~ "]" }

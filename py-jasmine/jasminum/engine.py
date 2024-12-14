@@ -156,7 +156,7 @@ class Engine:
         self.register_builtin("hash", series.hash)
         self.register_builtin("last", series.last)
         self.register_builtin("next", series.next)
-        self.register_builtin("null", series.null)
+        self.register_builtin("isnull", series.isnull)
         self.register_builtin("prev", series.prev)
         self.register_builtin("rank", series.rank)
         self.register_builtin("reverse", series.reverse)
