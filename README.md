@@ -2,7 +2,7 @@
 
 # jasmine
 
-[![Release Python](https://github.com/hinmeru/jasmine/actions/workflows/release-python-linux.yml/badge.svg)](https://github.com/hinmeru/jasmine/actions/workflows/release-python-linux.yml)
+[![Release Python](https://github.com/hinmeru/jasmine/actions/workflows/release-python.yml/badge.svg)](https://github.com/hinmeru/jasmine/actions/workflows/release-python.yml)
 
 Jasmine is a spec of analytics programming language, inspired by q, rust, python etc programming languages.
 

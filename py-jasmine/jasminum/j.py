@@ -264,6 +264,23 @@ class J:
         else:
             return False
 
+    def __len__(self):
+        match JType(self.j_type):
+            case (
+                JType.PARTED
+                | JType.ERR
+                | JType.FN
+                | JType.MISSING
+                | JType.RETURN
+                | JType.PARTED
+                | JType.EXPR
+            ):
+                return 0
+            case JType.SERIES | JType.DATAFRAME | JType.LIST | JType.DICT:
+                return len(self.data)
+            case _:
+                return 1
+
     def with_timezone(self, timezone: str):
         return J(self.data.with_timezone(timezone), self.j_type)
 

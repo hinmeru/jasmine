@@ -1,4 +1,5 @@
 from datetime import timedelta
+from typing import Callable
 
 import numpy as np
 import polars as pl
@@ -6,6 +7,70 @@ import polars as pl
 from .constant import PL_DATA_TYPE
 from .exceptions import JasmineEvalException
 from .j import J, JType
+
+
+def list_op_list(arg1: J, arg2: J, fn: Callable) -> J:
+    if len(arg1) != len(arg2):
+        raise JasmineEvalException(
+            "length error '{0}' vs '{1}'".format(len(arg1), len(arg2))
+        )
+    else:
+        res = []
+        for j1, j2 in zip(arg1.data, arg2.data):
+            res.append(fn(j1, j2))
+        return J(res)
+
+
+def dict_op_list(arg1: J, arg2: J, fn: Callable) -> J:
+    if len(arg1) != len(arg2):
+        raise JasmineEvalException(
+            "length error '{0}' vs '{1}'".format(len(arg1), len(arg2))
+        )
+    else:
+        new_dict = arg1.data.copy()
+        for i, k in enumerate(arg1.data):
+            new_dict[k] = fn(new_dict[k], arg2.data[i])
+        return J(new_dict)
+
+
+def list_op_dict(arg1: J, arg2: J, fn: Callable) -> J:
+    if len(arg1) != len(arg2):
+        raise JasmineEvalException(
+            "length error '{0}' vs '{1}'".format(len(arg1), len(arg2))
+        )
+    else:
+        new_dict = arg2.data.copy()
+        for i, k in enumerate(arg2.data):
+            new_dict[k] = fn(arg1.data[i], new_dict[k])
+        return J(new_dict)
+
+
+def list_op_scalar(arg1: J, arg2: J, fn: Callable) -> J:
+    res = []
+    for j1 in arg1.data:
+        res.append(fn(j1, arg2))
+    return J(res)
+
+
+def scalar_op_list(arg1: J, arg2: J, fn: Callable) -> J:
+    res = []
+    for j2 in arg2.data:
+        res.append(fn(arg1, j2))
+    return J(res)
+
+
+def dict_op_scalar(arg1: J, arg2: J, fn: Callable) -> J:
+    new_dict = arg1.data.copy()
+    for k, v in arg1.data.items():
+        new_dict[k] = fn(v, arg2)
+    return J(new_dict)
+
+
+def scalar_op_dict(arg1: J, arg2: J, fn: Callable) -> J:
+    new_dict = arg2.data.copy()
+    for k, v in arg2.data.items():
+        new_dict[k] = fn(arg1, v)
+    return J(new_dict)
 
 
 # |           | date | time | datetime | timestamp | duration  |
@@ -45,6 +110,31 @@ def add(arg1: J, arg2: J) -> J:
             return J(arg1.data + arg2.to_series())
         else:
             return J(arg1.data + arg2.data)
+    elif arg1.j_type == JType.LIST and arg2.j_type.value <= 10:
+        return list_op_scalar(arg1, arg2)
+    elif arg1.j_type == JType.LIST and arg2.j_type == JType.LIST:
+        return list_op_list(arg1, arg2, add)
+    elif arg1.j_type.value <= 10 and arg2.j_type == JType.LIST:
+        return scalar_op_list(arg1, arg2, add)
+    elif arg1.j_type == JType.DICT and arg2.j_type.value <= 10:
+        return dict_op_scalar(arg1, arg2)
+    elif arg1.j_type == JType.DICT and arg2.j_type == JType.DICT:
+        new_dict = {}
+        for k, v in arg1.data.items():
+            if k in arg2.data:
+                new_dict[k] = add(v, arg2.data[k])
+            else:
+                new_dict[k] = v
+        for k, v in arg2.data.items():
+            if k not in arg1.data:
+                new_dict[k] = v
+        return J(new_dict)
+    elif arg1.j_type.value <= 10 and arg2.j_type == JType.DICT:
+        return scalar_op_dict(arg1, arg2, add)
+    elif arg1.j_type == JType.LIST and arg2.j_type == JType.DICT:
+        return list_op_dict(arg1, arg2, add)
+    elif arg1.j_type == JType.DICT and arg2.j_type == JType.LIST:
+        return dict_op_list(arg1, arg2, add)
     elif (
         arg1.j_type == JType.DURATION and arg2.j_type.value >= 3 and arg2.j_type <= 6
     ) or (arg1.j_type.value <= 10 and arg2.j_type == JType.SERIES):

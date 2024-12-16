@@ -6,13 +6,13 @@ pub enum JError {
     #[error("{0}")]
     Err(String),
 
-    #[error("Parser err: {0}")]
+    #[error("parser err: {0}")]
     ParserErr(String),
 
-    #[error("Failed to refer {0} from {1}")]
+    #[error("failed to refer {0} from {1}")]
     MismatchedTypeErr(String, String),
 
-    #[error("Length error '{0}' vs '{1}'")]
+    #[error("length error '{0}' vs '{1}'")]
     MismatchedLengthErr(usize, usize),
 }
 

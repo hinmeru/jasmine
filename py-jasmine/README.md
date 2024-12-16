@@ -71,8 +71,22 @@ l[1, null, `cat]
 `i8$[]
 
 // non-empty series
-[true, null, false]
+// i64
+1 0n -1
+
+// i8
 [0i8, 1, 2]
+
+// u8
+0n 1u8 3
+
+// bool
+1b 0b 1b 0n
+[true, null, false]
+
+// cats
+`a`b`c
+['c','d',null]
 ```
 
 ### Dataframe
@@ -129,7 +143,11 @@ while(condition) {
   statement1;
   statement2;
 }
+```
 
+### Error Handling
+
+```
 try {
   statement1;
   statement2;
@@ -155,6 +173,15 @@ fn(param1, param2, ...){
 
 ```
 fn(arg1, arg2, ...)
+```
+
+### Functional Call with Parted Args
+
+fn2 is a function requires 2 arguments
+
+```
+fn2(arg1)
+fn2(, arg2)
 ```
 
 ## Expression
