@@ -113,6 +113,12 @@ class J:
                     self.data = py_dict
                 case _:
                     self.data = data.as_py()
+        elif isinstance(data, bool):
+            self.j_type = JType.BOOLEAN
+        elif isinstance(data, int):
+            self.j_type = JType.Int
+        elif isinstance(data, float):
+            self.j_type = JType.FLOAT
         elif isinstance(data, pl.Series):
             self.j_type = JType.SERIES
         elif isinstance(data, pl.DataFrame):
@@ -350,6 +356,45 @@ class J:
             return True
         else:
             return False
+
+    def to_list(self) -> list:
+        if self.j_type == JType.SERIES:
+            if isinstance(self.data.dtype, pl.Datetime):
+                time_zone = self.data.dtype.time_zone
+                if time_zone is None:
+                    time_zone = "UTC"
+                time_unit = self.data.dtype.time_unit
+                if time_unit == "ms":
+                    raise JasmineEvalException("not support 'ms' unit datetime")
+                datetimes = []
+                for n in list(self.data.cast(pl.Int64)):
+                    datetimes.append(J(JObj(n, time_zone, time_unit)))
+                return J(datetimes)
+            elif self.data.dtype == pl.Duration:
+                durations = []
+                for n in list(self.data.cast(pl.Int64)):
+                    durations.append(J(n, JType.DURATION))
+                return J(durations)
+            elif self.data.dtype == pl.Time:
+                times = []
+                for n in list(self.data.cast(pl.Int64)):
+                    times.append(J(n, JType.TIME))
+                return J(durations)
+            else:
+                j_list = []
+                for n in list(self.data):
+                    j_list.append(J(n))
+                return J(j_list)
+        elif self.j_type == JType.DICT:
+            return J(list(self.data.values()))
+        elif (
+            self.j_type == JType.LIST
+            or self.j_type == JType.DATAFRAME
+            or self.j_type == JType.MATRIX
+        ):
+            return self
+        else:
+            return J([self])
 
     def to_str(self) -> str:
         if self.j_type == JType.STRING or self.j_type == JType.CAT:
