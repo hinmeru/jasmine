@@ -26,3 +26,6 @@ class JFn:
             return self.fn.fn_body
         else:
             return f"fn({", ".join(self.arg_names)})"
+
+    def is_built_in(self):
+        return isinstance(self.fn, Callable)

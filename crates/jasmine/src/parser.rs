@@ -107,10 +107,10 @@ fn parse_exp(pair: Pair<Rule>, source_id: usize) -> Result<AstNode, PestError<Ru
                 })
             }
         }
-        Rule::Id => Ok(AstNode::Id {
+        Rule::Id | Rule::BinaryOp => Ok(AstNode::Id {
             name: pair.as_str().to_owned(),
             start: pair.as_span().start(),
-            source_id: source_id,
+            source_id,
         }),
         Rule::Fn => {
             let fn_body = pair.as_str();

@@ -135,6 +135,8 @@ class J:
             self.j_type = JType.LIST
         elif isinstance(data, dict):
             self.j_type = JType.DICT
+        elif isinstance(data, JFn):
+            self.j_type = JType.FN
         else:
             self.j_type = j_type
 
@@ -195,6 +197,8 @@ class J:
                     )
                 output += "}"
                 return output
+            case JType.FN:
+                return str(self.data)
             case _:
                 return repr(self)
 

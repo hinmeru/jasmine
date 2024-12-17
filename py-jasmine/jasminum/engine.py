@@ -4,7 +4,7 @@ from typing import Callable
 
 import polars as pl
 
-from . import expr, io, math, series, sql, string
+from . import expr, io, iterator, math, series, sql, string
 from . import operator as op
 from .ast import print_trace
 from .exceptions import JasmineEvalException
@@ -188,6 +188,9 @@ class Engine:
         self.register_builtin("rcsv", io.rcsv)
         self.register_builtin("wcsv", io.wcsv)
 
+        # iterator
+        self.register_builtin("each", iterator.each)
+
         # vars
         self.builtins["timezone"] = J(
             pl.Series("timezone", sorted(list(zoneinfo.available_timezones())))
@@ -195,11 +198,13 @@ class Engine:
 
     def register_builtin(self, name: str, fn: Callable) -> None:
         arg_num = fn.__code__.co_argcount
-        self.builtins[name] = JFn(
-            fn,
-            dict(),
-            list(fn.__code__.co_varnames[:arg_num]),
-            arg_num,
+        self.builtins[name] = J(
+            JFn(
+                fn,
+                dict(),
+                list(fn.__code__.co_varnames[:arg_num]),
+                arg_num,
+            )
         )
 
     def get_trace(self, source_id: int, pos: int, msg: str) -> str:

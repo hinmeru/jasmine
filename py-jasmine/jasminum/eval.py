@@ -35,8 +35,6 @@ from .context import Context
 from .engine import Engine
 from .exceptions import JasmineEvalException
 from .j import J, JType
-from .j_fn import JFn
-from .operator import cast
 from .util import date_to_num
 
 
@@ -151,12 +149,37 @@ def eval_node(node, engine: Engine, ctx: Context, is_in_fn=False, is_in_sql=Fals
         return J(series)
     elif isinstance(node, AstSql):
         return eval_sql(node, engine, ctx, node.source_id, node.start, is_in_fn)
+    elif isinstance(node, AstSkip):
+        return J(None, JType.MISSING)
     else:
         raise JasmineEvalException("not yet implemented - %s" % node)
 
 
-def eval_fn(fn: JFn, engine: Engine, ctx: Context, source_id: int, start: int, *args):
+LIST_AGG_FN = set(
+    [
+        "all",
+        "any",
+        "first",
+        "last",
+        "count",
+        "max",
+        "min",
+        "mean",
+        "median",
+        "min",
+        "uc",
+        "std0",
+        "std1",
+        "sum",
+        "var0",
+        "var1",
+    ]
+)
+
+
+def eval_fn(j_fn: J, engine: Engine, ctx: Context, source_id: int, start: int, *args):
     try:
+        fn = j_fn.data
         if fn.arg_num < len(args):
             raise engine.get_trace(
                 source_id,
@@ -176,7 +199,61 @@ def eval_fn(fn: JFn, engine: Engine, ctx: Context, source_id: int, start: int, *
 
         if missing_arg_num == 0 and fn.arg_num == len(args):
             if isinstance(fn.fn, Callable):
-                return fn.fn(**fn_args)
+                if fn.fn.__name__ == "each":
+                    arg1 = fn_args["arg1"]
+                    arg2 = fn_args["arg2"]
+                    # each
+                    if arg1.j_type == JType.FN and arg2.j_type == JType.EXPR:
+                        if (
+                            arg1.j_type == JType.FN
+                            and arg1.data.is_built_in()
+                            # use list to check if to return agg result, all, any etc?
+                            and arg1.data.fn.__name__ in LIST_AGG_FN
+                        ):
+                            match arg1.data.fn.__name__:
+                                case "all":
+                                    return J(arg2.to_expr().list.all())
+                                case "any":
+                                    return J(arg2.to_expr().list.any())
+                                case "first":
+                                    return J(arg2.to_expr().list.first())
+                                case "last":
+                                    return J(arg2.to_expr().list.last())
+                                case "count":
+                                    return J(arg2.to_expr().list.len())
+                                case "max":
+                                    return J(arg2.to_expr().list.max())
+                                case "min":
+                                    return J(arg2.to_expr().list.min())
+                                case "mean":
+                                    return J(arg2.to_expr().list.mean())
+                                case "median":
+                                    return J(arg2.to_expr().list.median())
+                                case "min":
+                                    return J(arg2.to_expr().list.min())
+                                case "uc":
+                                    return J(arg2.to_expr().list.n_unique())
+                                case "std0":
+                                    return J(arg2.to_expr().list.std(0))
+                                case "std1":
+                                    return J(arg2.to_expr().list.std(1))
+                                case "sum":
+                                    return J(arg2.to_expr().list.sum())
+                                case "var0":
+                                    return J(arg2.to_expr().list.var(0))
+                                case "var1":
+                                    return J(arg2.to_expr().list.var(1))
+                        else:
+                            j = eval_fn(
+                                arg1, engine, ctx, source_id, start, J(pl.element())
+                            )
+                            return J(arg2.to_expr().list.eval(j.to_expr()))
+                    else:
+                        raise JasmineEvalException(
+                            "not yet implement 'each' for %s and %s" % (arg1, arg2)
+                        )
+                else:
+                    return fn.fn(**fn_args)
             else:
                 return eval_node(fn.fn, engine, Context(fn_args), True)
         else:
@@ -184,7 +261,7 @@ def eval_fn(fn: JFn, engine: Engine, ctx: Context, source_id: int, start: int, *
             new_fn.arg_names = missing_arg_names
             new_fn.arg_num = len(missing_arg_names)
             new_fn.args = fn_args
-            return new_fn
+            return J(new_fn)
     except Exception as e:
         raise JasmineEvalException(engine.get_trace(source_id, start, str(e)))
 
@@ -408,5 +485,5 @@ def eval_sql(
             )
         return J(df.collect())
     except Exception as e:
-        # raise e
-        raise JasmineEvalException(engine.get_trace(source_id, start, str(e)))
+        raise e
+        # raise JasmineEvalException(engine.get_trace(source_id, start, str(e)))
