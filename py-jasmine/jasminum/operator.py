@@ -223,7 +223,7 @@ def mod(arg1: J, arg2: J) -> J:
 
 def bin_min(arg1: J, arg2: J) -> J:
     if arg1.j_type == JType.EXPR or arg2.j_type == JType.EXPR:
-        return J(arg1.to_expr().min(arg2.to_expr()))
+        return J(arg1.to_expr().clip(upper_bound=arg2.to_expr()))
     else:
         raise JasmineEvalException(
             "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
@@ -234,7 +234,7 @@ def bin_min(arg1: J, arg2: J) -> J:
 
 def bin_max(arg1: J, arg2: J) -> J:
     if arg1.j_type == JType.EXPR or arg2.j_type == JType.EXPR:
-        return J(arg1.to_expr().max(arg2.to_expr()))
+        return J(arg1.to_expr().clip(lower_bound=arg2.to_expr()))
     else:
         raise JasmineEvalException(
             "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(

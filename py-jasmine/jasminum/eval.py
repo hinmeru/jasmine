@@ -286,8 +286,23 @@ def eval_sql(
                     df = df.filter(
                         eval_node(node, engine, ctx, is_in_fn, True).to_expr()
                     )
+        elif j.j_type == JType.STRING or j.j_type == JType.STRING:
+            path = j.to_str()
+            if path.endswith(".csv") or path.endswith(".gz"):
+                df = pl.scan_csv(path)
+            elif path.endswith(".json"):
+                df = pl.scan_ndjson(path)
+            elif path.endswith(".parquet"):
+                df = pl.scan_parquet(path)
+            else:
+                raise JasmineEvalException(
+                    "only support file ends with 'csv|gz|json|parquet', got %s" % path
+                )
         else:
-            raise JasmineEvalException("'from' requires dataframe, got %s" % j.j_type)
+            raise JasmineEvalException(
+                "'from' requires 'dataframe|partitioned dataframe|csv|parquet|ndjson', got %s"
+                % j.j_type
+            )
 
         groups = []
         if len(sql.groups) > 0:

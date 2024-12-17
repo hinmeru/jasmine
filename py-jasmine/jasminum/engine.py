@@ -4,11 +4,10 @@ from typing import Callable
 
 import polars as pl
 
-from . import expr, math, series, sql, string
+from . import expr, io, math, series, sql, string
 from . import operator as op
 from .ast import print_trace
 from .exceptions import JasmineEvalException
-from .io import wpart
 from .j import J, JParted, JType
 from .j_fn import JFn
 from .temporal import tz
@@ -183,7 +182,11 @@ class Engine:
         self.register_builtin("over", sql.over)
 
         # io
-        self.register_builtin("wpart", wpart)
+        self.register_builtin("wpart", io.wpart)
+        self.register_builtin("rparquet", io.rparquet)
+        self.register_builtin("wparquet", io.wparquet)
+        self.register_builtin("rcsv", io.rcsv)
+        self.register_builtin("wcsv", io.wcsv)
 
         # vars
         self.builtins["timezone"] = J(

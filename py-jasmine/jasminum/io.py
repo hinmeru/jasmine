@@ -4,6 +4,7 @@ from pathlib import Path
 
 import polars as pl
 
+from .constant import PL_DATA_TYPE
 from .exceptions import JasmineEvalException
 from .j import J, JType
 
@@ -57,3 +58,61 @@ def wpart(
         base_path.mkdir(parents=True, exist_ok=True)
         df.to_df().sort(sort_series).write_parquet(table_path)
         return J(str(table_path))
+
+
+# read parquet
+def rparquet(source: J, n_rows: J) -> J:
+    source_path = source.to_str()
+    if n_rows.j_type is None:
+        return J(pl.read_parquet(source_path))
+    else:
+        n = n_rows.int()
+        return J(pl.read_parquet(source_path, n))
+
+
+# write parquet
+def wparquet(data: J, file: J, level: J) -> J:
+    filepath = file.to_str()
+    df = data.to_df()
+    compression_level = level.int()
+    if compression_level < 1 or compression_level > 22:
+        raise JasmineEvalException(
+            "compression min-level: 1, max-level: 22, got %s", compression_level
+        )
+    df.write_parquet(filepath, compression_level=compression_level)
+    return file
+
+
+def rcsv(source: J, has_header: J, sep: J, ignore_errors: J, dtypes: J) -> J:
+    source_path = source.to_str()
+    args = {
+        "has_header": has_header.to_bool(),
+        "separator": sep.to_str(),
+        "ignore_errors": ignore_errors.to_bool(),
+        "try_parse_dates": True,
+    }
+    dtype_dict = {}
+    if dtypes.j_type == JType.DICT:
+        dtype_dict = dtypes.data
+        for k, v in dtype_dict.items():
+            dtype = v.to_str()
+            if dtype not in PL_DATA_TYPE:
+                raise JasmineEvalException("unrecognized data type name '%s'" % dtype)
+            dtype_dict[k] = PL_DATA_TYPE[v.to_str()]
+    if len(dtype_dict) == 0:
+        return pl.read_csv(source_path, **args)
+    else:
+        return pl.read_csv(
+            source_path,
+            columns=list(dtype_dict.keys()),
+            schema_overrides=dtype_dict,
+            **args,
+        )
+
+
+def wcsv(data: J, file: J, sep: J) -> J:
+    filepath = file.to_str()
+    df = data.to_df()
+    separator = sep.to_str()
+    df.write_csv(filepath, separator=separator)
+    return file
