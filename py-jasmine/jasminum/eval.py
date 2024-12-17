@@ -485,5 +485,5 @@ def eval_sql(
             )
         return J(df.collect())
     except Exception as e:
-        raise e
-        # raise JasmineEvalException(engine.get_trace(source_id, start, str(e)))
+        # raise e
+        raise JasmineEvalException(engine.get_trace(source_id, start, str(e)))

@@ -280,33 +280,33 @@ def cast(type_name: J, arg: J) -> J:
     if arg.j_type == JType.EXPR:
         match name:
             case name if name in PL_DATA_TYPE:
-                return arg.data.cast(PL_DATA_TYPE[name])
+                return J(arg.data.cast(PL_DATA_TYPE[name]))
             case "year":
-                return arg.data.dt.year()
+                return J(arg.data.dt.year())
             case "month":
-                return arg.data.dt.month()
+                return J(arg.data.dt.month())
             case "month_start":
-                return arg.data.dt.month_start()
+                return J(arg.data.dt.month_start())
             case "month_end":
-                return arg.data.dt.month_end()
+                return J(arg.data.dt.month_end())
             case "weekday":
-                return arg.data.dt.weekday()
+                return J(arg.data.dt.weekday())
             case "day":
-                return arg.data.dt.day()
+                return J(arg.data.dt.day())
             case "dt":
-                return arg.data.dt.date()
+                return J(arg.data.dt.date())
             case "hour":
-                return arg.data.dt.hour()
+                return J(arg.data.dt.hour())
             case "minute":
-                return arg.data.dt.minute()
+                return J(arg.data.dt.minute())
             case "second":
-                return arg.data.dt.second()
+                return J(arg.data.dt.second())
             case "t":
-                return arg.data.dt.time()
+                return J(arg.data.dt.time())
             case "ms":
-                return arg.data.dt.millisecond()
+                return J(arg.data.dt.millisecond())
             case "ns":
-                return arg.data.dt.nanosecond()
+                return J(arg.data.dt.nanosecond())
     elif arg.j_type == JType.SERIES:
         if name in PL_DATA_TYPE:
             return J(arg.data.cast(PL_DATA_TYPE[name]))
@@ -450,5 +450,20 @@ def xor(arg1: J, arg2: J) -> J:
         raise JasmineEvalException(
             "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
                 "^", arg1.j_type.name, arg2.j_type.name
+            )
+        )
+
+
+def range(start: J, end: J) -> J:
+    if start.j_type == JType.EXPR or end.j_type == JType.EXPR:
+        return J(pl.arange(start.to_expr(), end.to_expr()))
+    elif start.j_type == JType.INT and end.j_type == JType.INT:
+        return J(pl.arange(start.int(), end.int(), eager=True))
+    elif start.j_type == JType.DATE and end.j_type == JType.DATE:
+        return J(pl.date_range(start.data, end.data, eager=True))
+    else:
+        raise JasmineEvalException(
+            "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
+                "..", start.j_type.name, end.j_type.name
             )
         )

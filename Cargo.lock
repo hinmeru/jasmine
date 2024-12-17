@@ -710,7 +710,7 @@ checksum = "9028f49264629065d057f340a86acb84867925865f73bbf8d47b4d149a7e88b8"
 
 [[package]]
 name = "jasmine"
-version = "0.2.1"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1665,7 +1665,7 @@ dependencies = [
 
 [[package]]
 name = "py-jasmine"
-version = "0.2.1"
+version = "0.3.0"
 dependencies = [
  "chrono",
  "chrono-tz",

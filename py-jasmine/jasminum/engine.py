@@ -4,7 +4,7 @@ from typing import Callable
 
 import polars as pl
 
-from . import expr, io, iterator, math, series, sql, string
+from . import expr, io, iterator, join, math, series, sql, string
 from . import operator as op
 from .ast import print_trace
 from .exceptions import JasmineEvalException
@@ -48,6 +48,7 @@ class Engine:
         self.register_builtin("&", op.bin_min)
         self.register_builtin("#", op.take)
         self.register_builtin("^", op.xor)
+        self.register_builtin("..", op.range)
 
         # system
         self.register_builtin("load", lambda x: self.load_partitioned_df(x))
@@ -172,6 +173,9 @@ class Engine:
         self.register_builtin("ss", series.ss)
         self.register_builtin("ssr", series.ssr)
         self.register_builtin("union", series.union)
+
+        # join
+        self.register_builtin("aj", join.aj)
 
         # other
         self.register_builtin("clip", math.clip)
