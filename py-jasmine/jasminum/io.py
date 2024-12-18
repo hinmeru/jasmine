@@ -61,16 +61,23 @@ def wpart(
 
 
 # read parquet
-def rparquet(source: J, n_rows: J) -> J:
+def rparquet(source: J, n_rows: J, include_file_paths: J) -> J:
     if source.j_type == JType.CAT or source.j_type == JType.STRING:
         source_path = source.to_str()
     else:
         source_path = source.to_strs()
+    path_column = None
+    if include_file_paths.to_bool():
+        path_column = "source_file"
     if n_rows.j_type is None:
-        return J(pl.read_parquet(source_path))
+        return J(pl.scan_parquet(source_path, include_file_paths=path_column).collect())
     else:
         n = n_rows.int()
-        return J(pl.read_parquet(source_path, n))
+        return J(
+            pl.scan_parquet(
+                source_path, n_rows=n, include_file_paths=include_file_paths
+            ).collect()
+        )
 
 
 # write parquet
@@ -86,17 +93,18 @@ def wparquet(data: J, file: J, level: J) -> J:
     return file
 
 
-def rcsv(source: J, has_header: J, sep: J, ignore_errors: J, dtypes: J) -> J:
+def rcsv(
+    source: J,
+    has_header: J,
+    sep: J,
+    ignore_errors: J,
+    dtypes: J,
+    include_file_paths: J,
+) -> J:
     if source.j_type == JType.CAT or source.j_type == JType.STRING:
         source_path = source.to_str()
     else:
         source_path = source.to_strs()
-    args = {
-        "has_header": has_header.to_bool(),
-        "separator": sep.to_str(),
-        "ignore_errors": ignore_errors.to_bool(),
-        "try_parse_dates": True,
-    }
     dtype_dict = {}
     if dtypes.j_type == JType.DICT:
         dtype_dict = dtypes.data
@@ -105,14 +113,27 @@ def rcsv(source: J, has_header: J, sep: J, ignore_errors: J, dtypes: J) -> J:
             if dtype not in PL_DATA_TYPE:
                 raise JasmineEvalException("unrecognized data type name '%s'" % dtype)
             dtype_dict[k] = PL_DATA_TYPE[v.to_str()]
+    path_column = None
+    if include_file_paths.to_bool():
+        path_column = "source_file"
+    args = {
+        "has_header": has_header.to_bool(),
+        "separator": sep.to_str(),
+        "ignore_errors": ignore_errors.to_bool(),
+        "try_parse_dates": True,
+        "include_file_paths": path_column,
+    }
     if len(dtype_dict) == 0:
-        return pl.read_csv(source_path, **args)
+        return J(pl.scan_csv(source_path, **args).collect())
     else:
-        return pl.read_csv(
-            source_path,
-            columns=list(dtype_dict.keys()),
-            schema_overrides=dtype_dict,
-            **args,
+        return J(
+            pl.scan_csv(
+                source_path,
+                schema_overrides=dtype_dict,
+                **args,
+            )
+            .select(list(dtype_dict.keys()))
+            .collect()
         )
 
 

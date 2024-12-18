@@ -194,7 +194,7 @@ SeriesNames     = _{ (SeriesName ~ ",")* ~ SeriesName? }
 RenameSeriesExp =  { SeriesName ~ "=" ~ (SqlOpExp | BracketSqlExp) }
 SeriesExp       =  { RenameSeriesExp | SqlOpExp | BracketSqlExp }
 SeriesExps      = _{ (SeriesExp ~ ",")* ~ SeriesExp? }
-FromExp         =  { "from" ~ (Id | GlobalId | BracketExp | FnCall | Cat | String) }
+FromExp         =  { "from" ~ (FnCall | Id | GlobalId | BracketExp | Cat | String) }
 GroupExp        =  { ("by" | "dyn" | "rolling") ~ SeriesExps }
 FilterExp       =  { "where" ~ (SqlOpExp ~ ",")* ~ SqlOpExp? }
 SelectOp        =  { "select" ~ SeriesExps }
@@ -238,7 +238,7 @@ Unknown   =  { (!("," | "]") ~ ANY)* }
 
 Series = { "[" ~ (Unknown ~ ",")* ~ Unknown? ~ "]" }
 
-SeriesAlt = { Scalar ~ Scalar+ }
+SeriesAlt = { Scalar{2, } }
 
 Scalar = @{ "-"? ~ (ASCII_DIGIT ~ (ASCII_DIGIT | "." | "-" | "D" | "T" | "n" | "b" | ":" | "u" | "i" | "f" | "s" | "m" | "h")*) }
 

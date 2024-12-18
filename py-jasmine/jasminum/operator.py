@@ -191,6 +191,17 @@ def pow(arg1: J, arg2: J) -> J:
 def mul(arg1: J, arg2: J) -> J:
     if arg1.j_type == JType.EXPR or arg2.j_type == JType.EXPR:
         return J(arg1.to_expr().mul(arg2.to_expr()))
+    elif arg1.j_type == JType.NULL or arg2.j_type == JType.NULL:
+        return J(None, JType.NULL)
+    elif arg1.j_type.value <= 2 and arg2.j_type.value <= 2:
+        return J(arg1.data * arg2.data, JType.INT)
+    elif arg1.j_type == JType.SERIES and arg2.j_type.value <= 11:
+        if arg2.is_temporal_scalar():
+            return J(arg1.data * arg2.to_series())
+        else:
+            return J(arg1.data * arg2.data)
+    elif arg1.j_type.value <= 10 and arg2.j_type == JType.SERIES:
+        return mul(arg2, arg1)
     else:
         raise JasmineEvalException(
             "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
@@ -435,6 +446,20 @@ def take(n: J, arg: J) -> J:
             return J(pl.Expr.head(arg.to_expr(), num))
         else:
             return J(pl.Expr.tail(arg.to_expr(), abs(num)))
+    if n.j_type == JType.INT and arg.j_type == JType.SERIES:
+        num = n.int()
+        if num == 0:
+            return J(arg.data.head(0))
+        else:
+            s = arg.data
+            if s.is_empty():
+                s.extend(pl.Series("", [None]))
+            while len(s) < abs(num):
+                s.extend(s)
+            if num > 0:
+                return J(s.head(num))
+            else:
+                return J(s.tail(abs(num)))
     else:
         raise JasmineEvalException(
             "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(

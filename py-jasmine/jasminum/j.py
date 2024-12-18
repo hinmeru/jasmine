@@ -116,7 +116,7 @@ class J:
         elif isinstance(data, bool):
             self.j_type = JType.BOOLEAN
         elif isinstance(data, int):
-            self.j_type = JType.Int
+            self.j_type = JType.INT
         elif isinstance(data, float):
             self.j_type = JType.FLOAT
         elif isinstance(data, pl.Series):
