@@ -1,5 +1,6 @@
 import glob
 import os
+from datetime import datetime
 from pathlib import Path
 
 import polars as pl
@@ -143,3 +144,21 @@ def wcsv(data: J, file: J, sep: J) -> J:
     separator = sep.to_str()
     df.write_csv(filepath, separator=separator)
     return file
+
+
+def dir(pathname: J) -> J:
+    files = glob.glob(pathname.to_str(), recursive=True)
+    mod_times = []
+    sizes = []
+    for file in files:
+        mod_times.append(datetime.fromtimestamp(os.path.getmtime(file)))
+        sizes.append(os.path.getsize(file))
+    return J(
+        pl.DataFrame(
+            [
+                pl.Series("filepath", files),
+                pl.Series("mtime", mod_times, pl.Datetime("ms")),
+                pl.Series("size", sizes),
+            ]
+        )
+    )

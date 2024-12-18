@@ -194,6 +194,7 @@ class Engine:
         self.register_builtin("wparquet", io.wparquet)
         self.register_builtin("rcsv", io.rcsv)
         self.register_builtin("wcsv", io.wcsv)
+        self.register_builtin("dir", io.dir)
 
         # iterator
         self.register_builtin("each", iterator.each)

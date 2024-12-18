@@ -119,6 +119,8 @@ class J:
             self.j_type = JType.INT
         elif isinstance(data, float):
             self.j_type = JType.FLOAT
+        elif isinstance(data, str):
+            self.j_type = JType.STRING
         elif isinstance(data, pl.Series):
             self.j_type = JType.SERIES
         elif isinstance(data, pl.DataFrame):
@@ -135,8 +137,6 @@ class J:
             self.j_type = JType.LIST
         elif isinstance(data, dict):
             self.j_type = JType.DICT
-        elif isinstance(data, JFn):
-            self.j_type = JType.FN
         else:
             self.j_type = j_type
 
