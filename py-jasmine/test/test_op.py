@@ -13,6 +13,20 @@ from jasminum.j import J, JType
     "src,expect",
     [
         ("1+1", J(2, JType.INT)),
+    ],
+)
+def test_op(src, expect):
+    engine = Engine()
+    res = eval_src(src, 0, engine, Context(dict()))
+    if res.j_type in (JType.DATAFRAME, JType.SERIES):
+        res.data.equals(expect.data)
+    else:
+        assert res == expect
+
+
+@pytest.mark.parametrize(
+    "src,expect",
+    [
         ("2024-10-23+1D00:12:34.5", J(date(2024, 10, 24))),
         ("2024-10-23D+0D00:12:34.5", J.from_nanos(1729642354500000000, "UTC")),
         ("[,,]", J(pl.Series("", [None, None, None]))),
@@ -29,7 +43,7 @@ from jasminum.j import J, JType
         ),
     ],
 )
-def test_simple_src(src, expect):
+def test_data_types(src, expect):
     engine = Engine()
     res = eval_src(src, 0, engine, Context(dict()))
     if res.j_type in (JType.DATAFRAME, JType.SERIES):

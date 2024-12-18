@@ -125,3 +125,36 @@ def replace(original: J, pattern: J, value: J) -> J:
                 "replace", original.j_type.name, pattern.j_type.name, value.j_type.name
             )
         )
+
+
+def extract(string: J, pattern: J) -> J:
+    if string.j_type == JType.EXPR or pattern.j_type == JType.EXPR:
+        return J(string.to_expr().str.extract(pattern.to_expr(), group_index=0))
+    else:
+        raise JasmineEvalException(
+            "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
+                "extract", string.j_type.name, pattern.j_type.name
+            )
+        )
+
+
+def parse_date(string: J, pattern: J) -> J:
+    if string.j_type == JType.EXPR:
+        return J(string.to_expr().str.to_date(pattern.to_str()))
+    else:
+        raise JasmineEvalException(
+            "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
+                "extract", string.j_type.name, pattern.j_type.name
+            )
+        )
+
+
+def parse_datetime(string: J, pattern: J) -> J:
+    if string.j_type == JType.EXPR:
+        return J(string.to_expr().str.to_datetime(pattern.to_str()))
+    else:
+        raise JasmineEvalException(
+            "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
+                "extract", string.j_type.name, pattern.j_type.name
+            )
+        )

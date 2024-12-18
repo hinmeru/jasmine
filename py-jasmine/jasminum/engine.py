@@ -4,7 +4,7 @@ from typing import Callable
 
 import polars as pl
 
-from . import expr, io, iterator, join, math, series, sql, string
+from . import cfg, expr, io, iterator, join, math, series, sql, string
 from . import operator as op
 from .ast import print_trace
 from .exceptions import JasmineEvalException
@@ -143,6 +143,9 @@ class Engine:
         self.register_builtin("join", string.join)
         self.register_builtin("split", string.split)
         self.register_builtin("replace", string.replace)
+        self.register_builtin("extract", string.extract)
+        self.register_builtin("parse_date", string.parse_date)
+        self.register_builtin("parse_datetime", string.parse_datetime)
 
         # series
         self.register_builtin("asc", series.asc)
@@ -194,6 +197,10 @@ class Engine:
 
         # iterator
         self.register_builtin("each", iterator.each)
+
+        # config
+        self.register_builtin("cfg_strlen", cfg.strlen)
+        self.register_builtin("cfg_tbl", cfg.tbl)
 
         # vars
         self.builtins["timezone"] = J(

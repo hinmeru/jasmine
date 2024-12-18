@@ -10,7 +10,7 @@ pip install jasminum
 
 ## Start a jasminum Process
 
-jasminum
+`jasminum`
 
 ## Data Type
 

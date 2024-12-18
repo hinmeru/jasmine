@@ -62,7 +62,10 @@ def wpart(
 
 # read parquet
 def rparquet(source: J, n_rows: J) -> J:
-    source_path = source.to_str()
+    if source.j_type == JType.CAT or source.j_type == JType.STRING:
+        source_path = source.to_str()
+    else:
+        source_path = source.to_strs()
     if n_rows.j_type is None:
         return J(pl.read_parquet(source_path))
     else:
@@ -84,7 +87,10 @@ def wparquet(data: J, file: J, level: J) -> J:
 
 
 def rcsv(source: J, has_header: J, sep: J, ignore_errors: J, dtypes: J) -> J:
-    source_path = source.to_str()
+    if source.j_type == JType.CAT or source.j_type == JType.STRING:
+        source_path = source.to_str()
+    else:
+        source_path = source.to_strs()
     args = {
         "has_header": has_header.to_bool(),
         "separator": sep.to_str(),
