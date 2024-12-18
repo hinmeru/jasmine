@@ -1,6 +1,6 @@
 import argparse
 import importlib.metadata
-import readline
+import platform
 import traceback
 
 from termcolor import cprint
@@ -8,7 +8,6 @@ from termcolor import cprint
 from .context import Context
 from .engine import Engine
 from .eval import eval_src
-from .history_console import HistoryConsole
 
 __version__ = importlib.metadata.version("jasminum")
 
@@ -44,9 +43,16 @@ def main():
     )
 
     engine = Engine()
-    HistoryConsole()
     src = ""
-    readline.set_completer(engine.complete)
+    # readline doesn't work for windows
+    if platform.system() != "Windows":
+        import readline
+
+        from .history_console import HistoryConsole
+
+        HistoryConsole()
+
+        readline.set_completer(engine.complete)
     while src != "exit":
         try:
             src = []
