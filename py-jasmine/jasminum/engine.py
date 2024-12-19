@@ -4,7 +4,7 @@ from typing import Callable
 
 import polars as pl
 
-from . import cfg, expr, io, iterator, join, math, series, sql, string
+from . import cfg, df, expr, io, iterator, math, series, sql, string
 from . import operator as op
 from .ast import print_trace
 from .exceptions import JasmineEvalException
@@ -177,8 +177,9 @@ class Engine:
         self.register_builtin("ssr", series.ssr)
         self.register_builtin("union", series.union)
 
-        # join
-        self.register_builtin("aj", join.aj)
+        # df
+        self.register_builtin("aj", df.aj)
+        self.register_builtin("schema", df.schema)
 
         # other
         self.register_builtin("clip", math.clip)
@@ -194,7 +195,8 @@ class Engine:
         self.register_builtin("wparquet", io.wparquet)
         self.register_builtin("rcsv", io.rcsv)
         self.register_builtin("wcsv", io.wcsv)
-        self.register_builtin("dir", io.dir)
+        self.register_builtin("ls", io.ls)
+        self.register_builtin("rm", io.rm)
 
         # iterator
         self.register_builtin("each", iterator.each)

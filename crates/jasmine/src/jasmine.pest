@@ -74,8 +74,8 @@ UnaryOperand = _{
   | Handle
   | Fn
   | FnCall
-  | Id
   | GlobalId
+  | Id
   | BracketExp
 }
 
@@ -94,9 +94,9 @@ BinaryOperand = _{
 
 BinaryExp = { BinaryOperand ~ Binary ~ Exp }
 
-Tuple = { "(" ~ ((Id | GlobalId | Skip) ~ ",")* ~ (Id | GlobalId | Skip) ~ ")" }
+Tuple = { "(" ~ ((GlobalId | Id | Skip) ~ ",")* ~ (GlobalId | Id | Skip) ~ ")" }
 
-AssignmentExp = { (FnCall | Id | GlobalId | Tuple) ~ "=" ~ Exp }
+AssignmentExp = { (FnCall | GlobalId | Id | Tuple) ~ "=" ~ Exp }
 
 Term = _{
     Dataframe
@@ -119,8 +119,8 @@ Term = _{
   | Time
   | Decimal
   | Integer
-  | Id
   | GlobalId
+  | Id
 }
 
 // functions with 2 parameters
@@ -160,7 +160,7 @@ Binary = _{
   | BinaryId
 }
 
-BinaryId = @{ "~" ~ (Id | GlobalId) }
+BinaryId = @{ "~" ~ (GlobalId | Id) }
 
 // <--SQL
 SqlKeyword = {
@@ -185,7 +185,7 @@ SqlOpExp = _{
 }
 
 UnarySqlExp     =  {
-    (Id | GlobalId) ~ (BinarySqlExp | UnarySqlExp | FnCall | Term)
+    (GlobalId | Id) ~ (BinarySqlExp | UnarySqlExp | FnCall | Term)
 }
 BinarySqlExp    =  { BinaryOperand ~ (BinaryOp | BinaryId | "over") ~ SqlOpExp }
 BracketSqlExp   =  { "(" ~ SqlOpExp ~ ("," ~ SqlOpExp)* ~ ","? ~ ")" }
@@ -194,7 +194,7 @@ SeriesNames     = _{ (SeriesName ~ ",")* ~ SeriesName? }
 RenameSeriesExp =  { SeriesName ~ "=" ~ (SqlOpExp | BracketSqlExp) }
 SeriesExp       =  { RenameSeriesExp | SqlOpExp | BracketSqlExp }
 SeriesExps      = _{ (SeriesExp ~ ",")* ~ SeriesExp? }
-FromExp         =  { "from" ~ (FnCall | Id | GlobalId | BracketExp | Cat | String) }
+FromExp         =  { "from" ~ (FnCall | GlobalId | Id | BracketExp | Cat | String) }
 GroupExp        =  { ("by" | "dyn" | "rolling") ~ SeriesExps }
 FilterExp       =  { "where" ~ (SqlOpExp ~ ",")* ~ SqlOpExp? }
 SelectOp        =  { "select" ~ SeriesExps }
@@ -213,7 +213,7 @@ Dataframe = { "df" ~ "[" ~ SeriesExp ~ ("," ~ SeriesExp)* ~ ","? ~ "]" }
 Row    = { "[" ~ (Exp ~ ("," ~ Exp)*)? ~ ","? ~ "]" }
 Matrix = { "x[" ~ Row* ~ "]" }
 
-KeyValueExp = { Id ~ ":" ~ Exp }
+KeyValueExp = { (String | Cat | CatAlt | Id) ~ ":" ~ Exp }
 Dict        = {
     ("{" ~ (KeyValueExp ~ ",")* ~ KeyValueExp? ~ "}")
 }

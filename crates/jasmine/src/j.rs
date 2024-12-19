@@ -8,26 +8,26 @@ use polars::{
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum J {
-    Boolean(bool),                           // -1
-    I64(i64),                                // -5
-    Date(i32),                               // -6 start from 1970.01.01
-    Time(i64),                               // -7 00:00:00.0 - 23:59:59.999999999
-    Datetime { ms: i64, timezone: String },  // -8 start from 1970.01.01T00:00:00.0
-    Timestamp { ns: i64, timezone: String }, // -9 start from 1970.01.01D00:00:00.0
-    Duration(i64),                           // -10
-    F64(f64),                                // -12
-    String(String),                          // -13
-    Cat(String),                             // -14
+    Boolean(bool),
+    I64(i64),
+    Date(i32),                               // start from 1970.01.01
+    Time(i64),                               // 00:00:00.0 - 23:59:59.999999999
+    Datetime { ms: i64, timezone: String },  // start from 1970.01.01T00:00:00.0
+    Timestamp { ns: i64, timezone: String }, // start from 1970.01.01D00:00:00.0
+    Duration(i64),
+    F64(f64),
+    String(String),
+    Cat(String),
 
-    Null, // 0
+    Null,
 
-    Series(Series), // 1-14 -> Arrow IPC
+    Series(Series), // -> Arrow IPC
 
-    Matrix(ArcArray2<f64>), // 21
+    Matrix(ArcArray2<f64>),
 
-    MixedList(Vec<J>),         // 90
-    Dict(IndexMap<String, J>), // 91 -> skip Dataframe
-    DataFrame(DataFrame),      // 92 -> Arrow IPC
+    MixedList(Vec<J>),
+    Dict(IndexMap<String, J>),
+    DataFrame(DataFrame), // -> Arrow IPC
 
     Err(String), // 128 => string
 }

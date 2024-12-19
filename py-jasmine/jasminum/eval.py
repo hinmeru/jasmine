@@ -291,6 +291,12 @@ def eval_fn(j_fn: J, engine: Engine, ctx: Context, source_id: int, start: int, *
                 new_fn.arg_num = len(missing_arg_names)
                 new_fn.args = fn_args
                 return J(new_fn)
+        else:
+            raise JasmineEvalException(
+                engine.get_trace(
+                    source_id, start, "not able to apply arg(s) to %s" % j_fn
+                )
+            )
     except Exception as e:
         raise JasmineEvalException(engine.get_trace(source_id, start, str(e)))
 
@@ -482,7 +488,7 @@ def eval_sql(
             elif sql.op == "update":
                 df = df.with_columns(ops)
             else:
-                df.drop(ops)
+                df = df.drop(ops)
 
         sorts = []
         descendings = []

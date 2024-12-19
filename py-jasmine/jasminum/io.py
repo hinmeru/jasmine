@@ -146,7 +146,7 @@ def wcsv(data: J, file: J, sep: J) -> J:
     return file
 
 
-def dir(pathname: J) -> J:
+def ls(pathname: J) -> J:
     files = glob.glob(pathname.to_str(), recursive=True)
     mod_times = []
     sizes = []
@@ -161,4 +161,21 @@ def dir(pathname: J) -> J:
                 pl.Series("size", sizes),
             ]
         )
+    )
+
+
+def rm(pathname: J) -> J:
+    if pathname.j_type == JType.STRING or pathname.j_type == JType.CAT:
+        files = glob.glob(pathname.to_str(), recursive=True)
+    else:
+        files = pathname.to_strs()
+    removed_files = []
+    for file in files:
+        try:
+            os.remove(file)
+            removed_files.append(file)
+        except OSError as e:
+            print(f"Error removing {file}: {e}")
+    return J(
+        pl.Series("removed_filepath", removed_files),
     )

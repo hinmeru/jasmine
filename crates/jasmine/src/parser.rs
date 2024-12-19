@@ -107,7 +107,7 @@ fn parse_exp(pair: Pair<Rule>, source_id: usize) -> Result<AstNode, PestError<Ru
                 })
             }
         }
-        Rule::Id | Rule::BinaryOp => Ok(AstNode::Id {
+        Rule::Id | Rule::BinaryOp | Rule::GlobalId => Ok(AstNode::Id {
             name: pair.as_str().to_owned(),
             start: pair.as_span().start(),
             source_id,
@@ -364,7 +364,13 @@ fn parse_exp(pair: Pair<Rule>, source_id: usize) -> Result<AstNode, PestError<Ru
             let mut all_j = true;
             for pair in pairs {
                 let mut kv = pair.into_inner();
-                keys.push(kv.next().unwrap().as_str().to_owned());
+                let key_node = kv.next().unwrap();
+                let key = match key_node.as_rule() {
+                    Rule::Id => key_node.as_str(),
+                    Rule::Cat => &key_node.as_str()[1..],
+                    _ => &key_node.as_str()[1..key_node.as_str().len() - 1],
+                };
+                keys.push(key.to_string());
                 let value = parse_exp(kv.next().unwrap(), source_id)?;
                 if let AstNode::J(_) = &value {
                 } else {
@@ -826,14 +832,11 @@ fn parse_sql_col_exp(pair: Pair<Rule>, source_id: usize) -> Result<AstNode, Pest
                 exp: Box::new(exp),
             })
         }
-        Rule::SeriesName => {
-            let name_node = pair.into_inner().next().unwrap();
-            Ok(AstNode::Id {
-                name: name_node.as_str().to_owned(), /* value */
-                start: name_node.as_span().start(),  /* value */
-                source_id,                           /* value */
-            })
-        }
+        Rule::SeriesName => Ok(AstNode::Id {
+            name: pair.as_str().to_owned(),
+            start: pair.as_span().start(),
+            source_id,
+        }),
         _ => parse_exp(pair, source_id),
     }
 }
