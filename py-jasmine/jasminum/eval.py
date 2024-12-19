@@ -48,7 +48,7 @@ def eval_src(source_code: str, source_id: int, engine: Engine, ctx: Context) -> 
     for node in nodes:
         res = eval_node(node, engine, ctx, False)
         if res == JType.RETURN:
-            return res
+            return res.data
     return res
 
 
@@ -151,6 +151,13 @@ def eval_node(node, engine: Engine, ctx: Context, is_in_fn=False, is_in_sql=Fals
         return eval_sql(node, engine, ctx, node.source_id, node.start, is_in_fn)
     elif isinstance(node, AstSkip):
         return J(None, JType.MISSING)
+    elif isinstance(node, AstReturn):
+        return J(eval_node(node, engine, ctx, is_in_fn, is_in_sql), JType.RETURN)
+    elif isinstance(node, AstRaise):
+        err = eval_node(node, engine, ctx, is_in_fn, is_in_sql)
+        raise JasmineEvalException(
+            engine.get_trace(node.source_id, node.start, err.to_str())
+        )
     else:
         raise JasmineEvalException("not yet implemented - %s" % node)
 
@@ -204,6 +211,19 @@ def eval_fn(j_fn: J, engine: Engine, ctx: Context, source_id: int, start: int, *
                         source_id,
                         start,
                         "only support up to one arg(index) for series, got %s args"
+                        % len(args),
+                    )
+                )
+        elif j_fn.j_type == JType.DICT:
+            d = j_fn.data
+            if len(args) == 1:
+                return d[args[0].to_str()]
+            else:
+                raise JasmineEvalException(
+                    engine.get_trace(
+                        source_id,
+                        start,
+                        "only support up to one arg(key) for dict, got %s args"
                         % len(args),
                     )
                 )

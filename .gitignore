@@ -4,3 +4,4 @@ __pycache__
 *.so
 py-jasmine/*.ipynb
 .vscode
+tmp

@@ -4,11 +4,16 @@ import os
 import platform
 import traceback
 
+import polars as pl
 from termcolor import cprint
 
 from .context import Context
 from .engine import Engine
 from .eval import eval_src
+
+pl.Config.set_fmt_str_lengths(80)
+pl.Config.set_tbl_rows(20)
+pl.Config.set_tbl_cols(20)
 
 __version__ = importlib.metadata.version("jasminum")
 

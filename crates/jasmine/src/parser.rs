@@ -199,8 +199,13 @@ fn parse_exp(pair: Pair<Rule>, source_id: usize) -> Result<AstNode, PestError<Ru
             Ok(AstNode::Return(Box::new(node)))
         }
         Rule::RaiseExp => {
+            let start = pair.as_span().start();
             let node = parse_exp(pair.into_inner().next().unwrap(), source_id)?;
-            Ok(AstNode::Raise(Box::new(node)))
+            Ok(AstNode::Raise {
+                exp: Box::new(node),
+                start,
+                source_id,
+            })
         }
         Rule::Skip => Ok(AstNode::Skip),
         Rule::Dataframe => {

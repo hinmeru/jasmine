@@ -56,7 +56,7 @@ impl Ast {
             AstNode::While { .. } => AstType::While,
             AstNode::Try { .. } => AstType::Try,
             AstNode::Return(_) => AstType::Return,
-            AstNode::Raise(_) => AstType::Raise,
+            AstNode::Raise { .. } => AstType::Raise,
             AstNode::Dataframe { .. } => AstType::Dataframe,
             AstNode::Matrix(_) => AstType::Matrix,
             AstNode::Dict { .. } => AstType::Dict,
@@ -293,9 +293,16 @@ impl Ast {
     }
 
     pub fn raise_exp(&self) -> PyResult<AstRaise> {
-        if let AstNode::Raise(node) = &self.0 {
+        if let AstNode::Raise {
+            exp,
+            start,
+            source_id,
+        } = &self.0
+        {
             Ok(AstRaise {
-                exp: Ast(*node.clone()),
+                exp: Ast(*exp.clone()),
+                start: *start,
+                source_id: *source_id,
             })
         } else {
             Err(PyJasmineErr::new_err(format!(
@@ -535,6 +542,8 @@ pub struct AstReturn {
 #[pyclass(get_all)]
 pub struct AstRaise {
     exp: Ast,
+    start: usize,
+    source_id: usize,
 }
 
 #[pyclass(get_all)]

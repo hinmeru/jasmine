@@ -58,7 +58,11 @@ pub enum AstNode {
         catches: Vec<AstNode>,
     },
     Return(Box<AstNode>),
-    Raise(Box<AstNode>),
+    Raise {
+        exp: Box<AstNode>,
+        start: usize,
+        source_id: usize,
+    },
     Dataframe {
         exps: Vec<AstNode>,
         start: usize,
