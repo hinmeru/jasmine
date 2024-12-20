@@ -28,6 +28,14 @@ parser.add_argument(
     help="enable debug mode",
 )
 
+parser.add_argument(
+    "-f",
+    "--file",
+    type=str,
+    dest="file",
+    help="path to the source file to execute",
+)
+
 
 def main():
     args = parser.parse_args()

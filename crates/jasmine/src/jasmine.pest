@@ -41,7 +41,7 @@ OtherKeyword = {
   | "false"
 }
 
-ConditionExp = {
+ConditionExp = _{
     SqlExp
   | AssignmentExp
   | UnaryExp
@@ -219,7 +219,7 @@ Dict        = {
 }
 
 Params = { "(" ~ (Id ~ ",")* ~ Id? ~ ")" }
-Fn     = { "fn" ~ Params ~ "{" ~ ((Exp | ReturnExp | RaiseExp) ~ ";")* ~ (Exp | ReturnExp | RaiseExp)? ~ "}" }
+Fn     = { "fn" ~ Params ~ "{" ~ Statements ~ "}" }
 
 Skip   = { "" }
 Arg    = { Exp | Skip }

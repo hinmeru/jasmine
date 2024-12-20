@@ -35,6 +35,7 @@ from .context import Context
 from .engine import Engine
 from .exceptions import JasmineEvalException
 from .j import J, JType
+from .j_fn import JFn
 from .util import date_to_num
 
 
@@ -61,17 +62,17 @@ def eval_node(node, engine: Engine, ctx: Context, is_in_fn=False, is_in_sql=Fals
     elif isinstance(node, AstAssign):
         res = eval_node(node.exp, engine, ctx, is_in_fn, is_in_sql)
         if is_in_fn and "." not in node.id:
-            ctx.locals[node.id] = res
+            ctx.set_var(node.id, res)
         else:
-            engine.globals[node.id] = res
+            engine.set_var(node.id, res)
         return res
     elif isinstance(node, AstId):
         if node.name in engine.builtins:
             return engine.builtins[node.name]
-        elif node.name in ctx.locals:
-            return ctx.locals[node.name]
-        elif node.name in engine.globals:
-            return engine.globals[node.name]
+        elif ctx.has_var(node.name):
+            return ctx.get_var(node.name)
+        elif engine.has_var(node.name):
+            return engine.get_var(node.name)
         elif node.name == "i" and is_in_sql:
             return J(pl.int_range(pl.len(), dtype=pl.UInt32).alias("i"))
         elif "." not in node.name and is_in_sql:
@@ -126,8 +127,8 @@ def eval_node(node, engine: Engine, ctx: Context, is_in_fn=False, is_in_sql=Fals
     elif isinstance(node, AstOp):
         if node.name in engine.builtins:
             return engine.builtins.get(node.name)
-        elif node.name in engine.globals:
-            return engine.globals.get(node.name)
+        elif engine.has_var(node.name):
+            return engine.get_var(node.name)
         else:
             raise JasmineEvalException(
                 engine.get_trace(
@@ -135,7 +136,7 @@ def eval_node(node, engine: Engine, ctx: Context, is_in_fn=False, is_in_sql=Fals
                 )
             )
     elif isinstance(node, AstFn):
-        raise JasmineEvalException("not yet implemented")
+        return J(JFn(node, dict(), node.arg_names, len(node.arg_names)))
     elif isinstance(node, AstDataFrame):
         df = []
         for series in node.exps:
@@ -152,12 +153,52 @@ def eval_node(node, engine: Engine, ctx: Context, is_in_fn=False, is_in_sql=Fals
     elif isinstance(node, AstSkip):
         return J(None, JType.MISSING)
     elif isinstance(node, AstReturn):
-        return J(eval_node(node, engine, ctx, is_in_fn, is_in_sql), JType.RETURN)
+        return J(eval_node(node.exp, engine, ctx, is_in_fn, is_in_sql), JType.RETURN)
     elif isinstance(node, AstRaise):
-        err = eval_node(node, engine, ctx, is_in_fn, is_in_sql)
+        err = eval_node(node.exp, engine, ctx, is_in_fn, is_in_sql)
         raise JasmineEvalException(
             engine.get_trace(node.source_id, node.start, err.to_str())
         )
+    elif isinstance(node, AstIf):
+        cond = eval_node(node.cond, engine, ctx, is_in_fn, is_in_sql)
+        if cond.is_truthy():
+            for stmt in node.stmts:
+                res = eval_node(stmt, engine, ctx, is_in_fn, is_in_sql)
+                if res.j_type == JType.RETURN:
+                    if not is_in_fn:
+                        return res.data
+                    else:
+                        return res
+        return J(None)
+    elif isinstance(node, AstWhile):
+        while eval_node(node.cond, engine, ctx, is_in_fn, is_in_sql).is_truthy():
+            for stmt in node.stmts:
+                res = eval_node(stmt, engine, ctx, is_in_fn, is_in_sql)
+                if res.j_type == JType.RETURN:
+                    if not is_in_fn:
+                        return res.data
+                    else:
+                        return res
+        return J(None)
+    elif isinstance(node, AstTry):
+        try:
+            for stmt in node.tries:
+                res = eval_node(stmt, engine, ctx, is_in_fn, is_in_sql)
+                if res.j_type == JType.RETURN:
+                    if not is_in_fn:
+                        return res.data
+                    else:
+                        return res
+        except Exception as e:
+            ctx.set_var(node.err, J(str(e)))
+            for stmt in node.catches:
+                res = eval_node(stmt, engine, ctx, is_in_fn, is_in_sql)
+                if res.j_type == JType.RETURN:
+                    if not is_in_fn:
+                        return res.data
+                    else:
+                        return res
+        return J(None)
     else:
         raise JasmineEvalException("not yet implemented - %s" % node)
 
@@ -304,7 +345,11 @@ def eval_fn(j_fn: J, engine: Engine, ctx: Context, source_id: int, start: int, *
                     else:
                         return fn.fn(**fn_args)
                 else:
-                    return eval_node(fn.fn, engine, Context(fn_args), True)
+                    for stmt in fn.get_statements():
+                        res = eval_node(stmt, engine, Context(fn_args), True)
+                        if res.j_type == JType.RETURN:
+                            return res.data
+                    return J(None)
             else:
                 new_fn = copy(fn)
                 new_fn.arg_names = missing_arg_names

@@ -91,6 +91,7 @@ class J:
         | pl.Expr
         | list
         | dict
+        | JFn
     )
     j_type: JType
 
@@ -355,6 +356,9 @@ class J:
         else:
             return [self.to_expr()]
 
+    def is_numeric_scalar(self) -> bool:
+        return self.j_type in {JType.INT, JType.FLOAT, JType.BOOLEAN}
+
     def is_temporal_scalar(self) -> bool:
         if self.j_type.value >= 3 and self.j_type.value <= 7:
             return True
@@ -450,3 +454,40 @@ class J:
             raise JasmineEvalException(
                 "expect '%s', but got %s" % (type.name, self.j_type)
             )
+
+    def neg(self):
+        if self.j_type == JType.NULL:
+            return self
+        elif self.j_type == JType.INT or self.j_type == JType.FLOAT:
+            return J(-self.data, self.j_type)
+        elif self.j_type == JType.DURATION:
+            return J(-self.data, self.j_type)
+        elif self.j_type == JType.SERIES:
+            return J(-self.data, self.j_type)
+        elif self.j_type == JType.LIST:
+            return J([item.neg() for item in self.data], self.j_type)
+        elif self.j_type == JType.DICT:
+            return J({k: v.neg() for k, v in self.data.items()}, self.j_type)
+        else:
+            raise JasmineEvalException(
+                "'neg' not supported for type %s" % self.j_type.name
+            )
+
+    def is_truthy(self) -> bool:
+        match self.j_type:
+            case JType.BOOLEAN:
+                return self.data
+            case JType.INT:
+                return self.data != 0
+            case JType.FLOAT:
+                return self.data != 0.0
+            case JType.STRING:
+                return len(self.data) > 0
+            case JType.LIST:
+                return len(self.data) > 0
+            case JType.DICT:
+                return len(self.data) > 0
+            case JType.SERIES | JType.DATAFRAME:
+                return not self.data.is_empty()
+            case _:
+                return False

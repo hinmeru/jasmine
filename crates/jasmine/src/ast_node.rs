@@ -55,6 +55,7 @@ pub enum AstNode {
     },
     Try {
         tries: Vec<AstNode>,
+        err: String,
         catches: Vec<AstNode>,
     },
     Return(Box<AstNode>),

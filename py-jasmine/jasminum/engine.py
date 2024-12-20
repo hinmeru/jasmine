@@ -14,10 +14,10 @@ from .temporal import tz
 
 
 class Engine:
-    globals: dict[str, any]
+    globals: dict[str, J]
     handles: dict[int, any]
     sources: dict[int, (str, str)]
-    builtins: dict[str, any]
+    builtins: dict[str, J]
 
     def __init__(self) -> None:
         self.globals = dict()
@@ -218,6 +218,7 @@ class Engine:
                 dict(),
                 list(fn.__code__.co_varnames[:arg_num]),
                 arg_num,
+                name,
             )
         )
 
@@ -258,6 +259,15 @@ class Engine:
                         )
                         frames.append(df_path.name)
         return J(pl.Series("", frames))
+
+    def set_var(self, name: str, value: J) -> None:
+        self.globals[name] = value
+
+    def get_var(self, name: str) -> J:
+        return self.globals.get(name, J(None))
+
+    def has_var(self, name: str) -> bool:
+        return name in self.globals
 
     def complete(self, text, state):
         for cmd in self.builtins.keys():

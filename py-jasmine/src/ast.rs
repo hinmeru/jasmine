@@ -264,9 +264,15 @@ impl Ast {
     }
 
     pub fn try_exp(&self) -> PyResult<AstTry> {
-        if let AstNode::Try { tries, catches } = &self.0 {
+        if let AstNode::Try {
+            tries,
+            err,
+            catches,
+        } = &self.0
+        {
             Ok(AstTry {
                 tries: tries.into_iter().map(|n| Ast(n.clone())).collect(),
+                err: err.to_string(),
                 catches: catches.into_iter().map(|n| Ast(n.clone())).collect(),
             })
         } else {
@@ -531,6 +537,7 @@ pub struct AstWhile {
 #[pyclass(get_all)]
 pub struct AstTry {
     tries: Vec<Ast>,
+    err: String,
     catches: Vec<Ast>,
 }
 

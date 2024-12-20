@@ -87,6 +87,12 @@ def add(arg1: J, arg2: J) -> J:
         return J(None, JType.NULL)
     elif arg1.j_type.value <= 2 and arg2.j_type.value <= 2:
         return J(arg1.data + arg2.data, JType.INT)
+    elif (
+        (arg1.j_type == JType.FLOAT or arg2.j_type == JType.FLOAT)
+        and arg1.is_numeric_scalar()
+        and arg2.is_numeric_scalar()
+    ):
+        return J(arg1.data + arg2.data, JType.FLOAT)
     elif arg1.j_type == JType.DATE and arg2.j_type == JType.DURATION:
         return J(arg1.data + timedelta(days=arg2.days()))
     elif arg1.j_type == JType.TIMESTAMP and arg2.j_type == JType.DURATION:
@@ -111,13 +117,13 @@ def add(arg1: J, arg2: J) -> J:
         else:
             return J(arg1.data + arg2.data)
     elif arg1.j_type == JType.LIST and arg2.j_type.value <= 10:
-        return list_op_scalar(arg1, arg2)
+        return list_op_scalar(arg1, arg2, add)
     elif arg1.j_type == JType.LIST and arg2.j_type == JType.LIST:
         return list_op_list(arg1, arg2, add)
     elif arg1.j_type.value <= 10 and arg2.j_type == JType.LIST:
         return scalar_op_list(arg1, arg2, add)
     elif arg1.j_type == JType.DICT and arg2.j_type.value <= 10:
-        return dict_op_scalar(arg1, arg2)
+        return dict_op_scalar(arg1, arg2, add)
     elif arg1.j_type == JType.DICT and arg2.j_type == JType.DICT:
         new_dict = {}
         for k, v in arg1.data.items():
@@ -154,6 +160,12 @@ def sub(arg1: J, arg2: J) -> J:
         return J(None, JType.NULL)
     elif arg1.j_type.value <= 2 and arg2.j_type.value <= 2:
         return J(arg1.data - arg2.data, JType.INT)
+    elif (
+        (arg1.j_type == JType.FLOAT or arg2.j_type == JType.FLOAT)
+        and arg1.is_numeric_scalar()
+        and arg2.is_numeric_scalar()
+    ):
+        return J(arg1.data - arg2.data, JType.FLOAT)
     elif arg1.j_type == JType.DATE and arg2.j_type == JType.DURATION:
         return J(arg1.data - timedelta(days=arg2.days()))
     elif arg1.j_type == JType.TIMESTAMP and arg2.j_type == JType.DURATION:
@@ -169,6 +181,31 @@ def sub(arg1: J, arg2: J) -> J:
             return J(arg1.data - arg2.to_series())
         else:
             return J(arg1.data - arg2.data)
+    elif arg1.j_type == JType.LIST and arg2.j_type.value <= 10:
+        return list_op_scalar(arg1, arg2, sub)
+    elif arg1.j_type == JType.LIST and arg2.j_type == JType.LIST:
+        return list_op_list(arg1, arg2, sub)
+    elif arg1.j_type.value <= 10 and arg2.j_type == JType.LIST:
+        return scalar_op_list(arg1, arg2, sub)
+    elif arg1.j_type == JType.DICT and arg2.j_type.value <= 10:
+        return dict_op_scalar(arg1, arg2, sub)
+    elif arg1.j_type == JType.DICT and arg2.j_type == JType.DICT:
+        new_dict = {}
+        for k, v in arg1.data.items():
+            if k in arg2.data:
+                new_dict[k] = sub(v, arg2.data[k])
+            else:
+                new_dict[k] = v
+        for k, v in arg2.data.items():
+            if k not in arg1.data:
+                new_dict[k] = v.neg()
+        return J(new_dict)
+    elif arg1.j_type.value <= 10 and arg2.j_type == JType.DICT:
+        return scalar_op_dict(arg1, arg2, sub)
+    elif arg1.j_type == JType.LIST and arg2.j_type == JType.DICT:
+        return list_op_dict(arg1, arg2, sub)
+    elif arg1.j_type == JType.DICT and arg2.j_type == JType.LIST:
+        return dict_op_list(arg1, arg2, sub)
     else:
         raise JasmineEvalException(
             "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
@@ -180,6 +217,45 @@ def sub(arg1: J, arg2: J) -> J:
 def pow(arg1: J, arg2: J) -> J:
     if arg1.j_type == JType.EXPR or arg2.j_type == JType.EXPR:
         return J(arg1.to_expr().pow(arg2.to_expr()))
+    elif arg1.j_type == JType.NULL or arg2.j_type == JType.NULL:
+        return J(None, JType.NULL)
+    elif (
+        (arg1.j_type.value <= 2 and arg2.j_type.value <= 2)
+        or (
+            (arg1.j_type == JType.FLOAT or arg2.j_type == JType.FLOAT)
+            and arg1.is_numeric_scalar()
+            and arg2.is_numeric_scalar()
+        )
+        or (arg1.j_type == JType.SERIES and arg2.is_numeric_scalar())
+        or (arg1.j_type == JType.SERIES and arg2.j_type == JType.SERIES)
+        or (arg1.is_numeric_scalar() and arg2.j_type == JType.SERIES)
+    ):
+        return J(arg1.data**arg2.data)
+    elif arg1.j_type == JType.LIST and arg2.j_type.value <= 10:
+        return list_op_scalar(arg1, arg2, pow)
+    elif arg1.j_type == JType.LIST and arg2.j_type == JType.LIST:
+        return list_op_list(arg1, arg2, pow)
+    elif arg1.j_type.value <= 10 and arg2.j_type == JType.LIST:
+        return scalar_op_list(arg1, arg2, pow)
+    elif arg1.j_type == JType.DICT and arg2.j_type.value <= 10:
+        return dict_op_scalar(arg1, arg2, pow)
+    elif arg1.j_type == JType.DICT and arg2.j_type == JType.DICT:
+        new_dict = {}
+        for k, v in arg1.data.items():
+            if k in arg2.data:
+                new_dict[k] = pow(v, arg2.data[k])
+            else:
+                new_dict[k] = v
+        for k, v in arg2.data.items():
+            if k not in arg1.data:
+                new_dict[k] = v
+        return J(new_dict)
+    elif arg1.j_type.value <= 10 and arg2.j_type == JType.DICT:
+        return scalar_op_dict(arg1, arg2, pow)
+    elif arg1.j_type == JType.LIST and arg2.j_type == JType.DICT:
+        return list_op_dict(arg1, arg2, pow)
+    elif arg1.j_type == JType.DICT and arg2.j_type == JType.LIST:
+        return dict_op_list(arg1, arg2, pow)
     else:
         raise JasmineEvalException(
             "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
@@ -195,13 +271,47 @@ def mul(arg1: J, arg2: J) -> J:
         return J(None, JType.NULL)
     elif arg1.j_type.value <= 2 and arg2.j_type.value <= 2:
         return J(arg1.data * arg2.data, JType.INT)
-    elif arg1.j_type == JType.SERIES and arg2.j_type.value <= 11:
-        if arg2.is_temporal_scalar():
-            return J(arg1.data * arg2.to_series())
-        else:
-            return J(arg1.data * arg2.data)
-    elif arg1.j_type.value <= 10 and arg2.j_type == JType.SERIES:
-        return mul(arg2, arg1)
+    elif (
+        (arg1.j_type == JType.FLOAT or arg2.j_type == JType.FLOAT)
+        and arg1.is_numeric_scalar()
+        and arg2.is_numeric_scalar()
+    ):
+        return J(arg1.data * arg2.data, JType.FLOAT)
+    elif (
+        (
+            arg1.j_type == JType.SERIES
+            and arg2.j_type.value <= 11
+            and not arg2.is_temporal_scalar()
+        )
+        or (arg1.j_type.value <= 10 and not arg1.is_temporal_scalar())
+        and arg2.j_type == JType.SERIES
+    ):
+        return J(arg1.data * arg2.data)
+    elif arg1.j_type == JType.LIST and arg2.j_type.value <= 10:
+        return list_op_scalar(arg1, arg2, mul)
+    elif arg1.j_type == JType.LIST and arg2.j_type == JType.LIST:
+        return list_op_list(arg1, arg2, mul)
+    elif arg1.j_type.value <= 10 and arg2.j_type == JType.LIST:
+        return scalar_op_list(arg1, arg2, mul)
+    elif arg1.j_type == JType.DICT and arg2.j_type.value <= 10:
+        return dict_op_scalar(arg1, arg2, mul)
+    elif arg1.j_type == JType.DICT and arg2.j_type == JType.DICT:
+        new_dict = {}
+        for k, v in arg1.data.items():
+            if k in arg2.data:
+                new_dict[k] = mul(v, arg2.data[k])
+            else:
+                new_dict[k] = v
+        for k, v in arg2.data.items():
+            if k not in arg1.data:
+                new_dict[k] = v
+        return J(new_dict)
+    elif arg1.j_type.value <= 10 and arg2.j_type == JType.DICT:
+        return scalar_op_dict(arg1, arg2, mul)
+    elif arg1.j_type == JType.LIST and arg2.j_type == JType.DICT:
+        return list_op_dict(arg1, arg2, mul)
+    elif arg1.j_type == JType.DICT and arg2.j_type == JType.LIST:
+        return dict_op_list(arg1, arg2, mul)
     else:
         raise JasmineEvalException(
             "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
@@ -213,6 +323,39 @@ def mul(arg1: J, arg2: J) -> J:
 def true_div(arg1: J, arg2: J) -> J:
     if arg1.j_type == JType.EXPR or arg2.j_type == JType.EXPR:
         return J(arg1.to_expr().truediv(arg2.to_expr()))
+    elif arg1.is_numeric_scalar() or arg2.is_numeric_scalar():
+        return J(arg1.data / arg2.data, JType.FLOAT)
+    elif (
+        arg1.j_type == JType.SERIES
+        and arg2.j_type.value <= 11
+        and not arg2.is_temporal_scalar()
+    ) or (arg2.j_type == JType.SERIES and arg1.j_type.value <= 11):
+        return J(arg1.data / arg2.data)
+    elif arg1.j_type == JType.LIST and arg2.j_type.value <= 10:
+        return list_op_scalar(arg1, arg2, true_div)
+    elif arg1.j_type == JType.LIST and arg2.j_type == JType.LIST:
+        return list_op_list(arg1, arg2, true_div)
+    elif arg1.j_type.value <= 10 and arg2.j_type == JType.LIST:
+        return scalar_op_list(arg1, arg2, true_div)
+    elif arg1.j_type == JType.DICT and arg2.j_type.value <= 10:
+        return dict_op_scalar(arg1, arg2, true_div)
+    elif arg1.j_type == JType.DICT and arg2.j_type == JType.DICT:
+        new_dict = {}
+        for k, v in arg1.data.items():
+            if k in arg2.data:
+                new_dict[k] = true_div(v, arg2.data[k])
+            else:
+                new_dict[k] = v
+        for k, v in arg2.data.items():
+            if k not in arg1.data:
+                new_dict[k] = true_div(J(1), v)
+        return J(new_dict)
+    elif arg1.j_type.value <= 10 and arg2.j_type == JType.DICT:
+        return scalar_op_dict(arg1, arg2, true_div)
+    elif arg1.j_type == JType.LIST and arg2.j_type == JType.DICT:
+        return list_op_dict(arg1, arg2, true_div)
+    elif arg1.j_type == JType.DICT and arg2.j_type == JType.LIST:
+        return dict_op_list(arg1, arg2, true_div)
     else:
         raise JasmineEvalException(
             "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
@@ -453,13 +596,32 @@ def take(n: J, arg: J) -> J:
         else:
             s = arg.data
             if s.is_empty():
-                s.extend(pl.Series("", [None]))
+                s.extend(pl.Series("", [None] * s.len()))
             while len(s) < abs(num):
                 s.extend(s)
             if num > 0:
                 return J(s.head(num))
             else:
                 return J(s.tail(abs(num)))
+    elif n.j_type == JType.INT and arg.j_type == JType.DATAFRAME:
+        num = n.int()
+        if num == 0:
+            return J(arg.data.head(0))
+        else:
+            df = arg.data
+            if df.is_empty():
+                df = pl.DataFrame(
+                    {
+                        col: pl.Series(col, [None] * num, dtype=dt)
+                        for col, dt in zip(df.columns, df.dtypes)
+                    }
+                )
+            while len(df) < abs(num):
+                df = pl.concat([df, df])
+            if num > 0:
+                return J(df.head(num))
+            else:
+                return J(df.tail(abs(num)))
     else:
         raise JasmineEvalException(
             "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
@@ -471,6 +633,16 @@ def take(n: J, arg: J) -> J:
 def xor(arg1: J, arg2: J) -> J:
     if arg1.j_type == JType.EXPR or arg2.j_type == JType.EXPR:
         return J(arg1.to_expr().xor(arg2.to_expr()))
+    elif arg1.j_type == JType.BOOL and arg2.j_type == JType.BOOL:
+        return J(arg1.data ^ arg2.data, JType.BOOL)
+    elif arg1.j_type.value <= 2 and arg2.j_type.value <= 2:
+        return J(arg1.data ^ arg2.data, JType.INT)
+    elif (
+        (arg1.j_type == JType.SERIES and arg2.is_numeric_scalar())
+        or (arg1.is_numeric_scalar() and arg2.j_type == JType.SERIES)
+        or (arg1.j_type == JType.SERIES and arg2.j_type == JType.SERIES)
+    ):
+        return J(arg1.data ^ arg2.data)
     else:
         raise JasmineEvalException(
             "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(

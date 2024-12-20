@@ -122,7 +122,8 @@ fn parse_exp(pair: Pair<Rule>, source_id: usize) -> Result<AstNode, PestError<Ru
             while let Some(pair) = inner.next() {
                 params.push(pair.as_str().to_owned())
             }
-            let mut nodes = Vec::with_capacity(pairs.len() - 1);
+            let pairs = pairs.next().unwrap().into_inner();
+            let mut nodes = Vec::with_capacity(pairs.len());
             for pair in pairs {
                 nodes.push(parse_exp(pair, source_id)?)
             }
@@ -189,10 +190,15 @@ fn parse_exp(pair: Pair<Rule>, source_id: usize) -> Result<AstNode, PestError<Ru
             for pair in pairs.next().unwrap().into_inner() {
                 tries.push(parse_exp(pair, source_id)?);
             }
+            let err = pairs.next().unwrap().as_str().to_owned();
             for pair in pairs.next().unwrap().into_inner() {
                 catches.push(parse_exp(pair, source_id)?);
             }
-            Ok(AstNode::Try { tries, catches })
+            Ok(AstNode::Try {
+                tries,
+                err,
+                catches,
+            })
         }
         Rule::ReturnExp => {
             let node = parse_exp(pair.into_inner().next().unwrap(), source_id)?;
@@ -852,7 +858,31 @@ fn raise_error(msg: String, span: Span) -> PestError<Rule> {
 
 pub fn parse(source: &str, source_id: usize) -> Result<Vec<AstNode>, PestError<Rule>> {
     let mut ast = vec![];
-    let pairs = JParser::parse(Rule::Program, source)?;
+    let pairs = JParser::parse(Rule::Program, source).map_err(|e| {
+        if e.to_string().len() > 200 {
+            match e.location {
+                pest::error::InputLocation::Pos(pos) => {
+                    let span = Span::new(source, pos, pos + 1).unwrap();
+                    match span.as_str() {
+                        ":" => raise_error("perhaps '='".to_string(), span),
+                        _ => raise_error("syntax error".to_string(), span),
+                    }
+                }
+                pest::error::InputLocation::Span(_) => e,
+            }
+        } else {
+            match e.location {
+                pest::error::InputLocation::Pos(pos) => {
+                    let span = Span::new(source, pos, pos + 1).unwrap();
+                    match span.as_str() {
+                        "=" => raise_error("perhaps '=='".to_string(), span),
+                        _ => e,
+                    }
+                }
+                pest::error::InputLocation::Span(_) => e,
+            }
+        }
+    })?;
     for pair in pairs {
         if let Rule::Exp = pair.as_rule() {
             ast.push(parse_exp(pair, source_id)?);
