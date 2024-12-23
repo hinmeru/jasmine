@@ -1,8 +1,9 @@
 String = @{ "\"" ~ ("\\\"" | "\\r" | "\\n" | "\\t" | (!"\"" ~ ANY))* ~ "\"" }
 
-Cat    = @{ "`" ~ (ASCII_ALPHANUMERIC | "_" | "." | "/" | "\\" | CJK)* }
-CatAlt = @{ "'" ~ (!"'" ~ ANY)* ~ "'" }
-Cats   = @{ ("`" ~ (ASCII_ALPHANUMERIC | "_" | "." | "/" | "\\" | CJK)*) ~ ("`" ~ (ASCII_ALPHANUMERIC | "_" | "." | "/" | "\\" | CJK)*)+ }
+CatChar = _{ ASCII_ALPHANUMERIC | "_" | "." | "/" | "\\" | ":" | CJK }
+Cat     = @{ "`" ~ CatChar* }
+CatAlt  = @{ "'" ~ (!"'" ~ ANY)* ~ "'" }
+Cats    = @{ ("`" ~ CatChar*) ~ ("`" ~ CatChar*)+ }
 
 WHITESPACE = _{ " " | "\t" | NEWLINE }
 
@@ -18,7 +19,6 @@ Exp = {
   | AssignmentExp
   | UnaryExp
   | BinaryExp
-  | Handle
   | Fn
   | FnCall
   | BracketExp
@@ -71,7 +71,6 @@ UnaryOperand = _{
   | Dict
   | Series
   | List
-  | Handle
   | Fn
   | FnCall
   | GlobalId
@@ -79,10 +78,8 @@ UnaryOperand = _{
   | BracketExp
 }
 
-Handle = { "h" ~ "[" ~ Exp ~ "]" }
-
 UnaryExp = {
-    UnaryOperand ~ (SqlExp | AssignmentExp | UnaryExp | BinaryExp | Handle | FnCall | Term)
+    UnaryOperand ~ (SqlExp | AssignmentExp | UnaryExp | BinaryExp | FnCall | Term)
 }
 
 BinaryOperand = _{
@@ -105,7 +102,6 @@ Term = _{
   | Series
   | SeriesAlt
   | List
-  | Handle
   | String
   | Cats
   | CatAlt
@@ -223,7 +219,7 @@ Fn     = { "fn" ~ Params ~ "{" ~ Statements ~ "}" }
 
 Skip   = { "" }
 Arg    = { Exp | Skip }
-FnCall = { (GlobalId | Fn | BinaryOp | Id | Dict | Dataframe | List | BracketExp | Handle) ~ "(" ~ (Arg ~ ",")* ~ Arg ~ ")" }
+FnCall = { (GlobalId | Fn | BinaryOp | Id | Dict | Dataframe | List | BracketExp) ~ "(" ~ (Arg ~ ",")* ~ Arg ~ ")" }
 
 Date      = @{ ASCII_DIGIT{4} ~ "-" ~ ASCII_DIGIT{2} ~ "-" ~ ASCII_DIGIT{2} }
 Time      = @{ ASCII_DIGIT{2} ~ ":" ~ ASCII_DIGIT{2} ~ ":" ~ ASCII_DIGIT{2} ~ ("." ~ ASCII_DIGIT{,9})? }

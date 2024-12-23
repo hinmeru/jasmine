@@ -492,6 +492,37 @@ def cast(type_name: J, arg: J) -> J:
                     return J(arg.data.dt.millisecond())
                 case "ns":
                     return J(arg.data.dt.nanosecond())
+    elif arg.j_type.value <= 10:
+        if name == "string" and arg.j_type.value <= 8:
+            return J(str(arg))
+        elif name == "i64":
+            return J(arg.int())
+        elif name == "f64":
+            return J(arg.float())
+
+        match arg.j_type:
+            case JType.STRING:
+                if name == "cat":
+                    return J(arg.data, JType.CAT)
+                elif name == "string":
+                    return arg
+            case JType.CAT:
+                if name == "string":
+                    return J(arg.data, JType.STRING)
+                elif name == "cat":
+                    return arg
+
+        raise JasmineEvalException(
+            "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
+                "cast", type_name.j_type.name, arg.j_type.name
+            )
+        )
+    else:
+        raise JasmineEvalException(
+            "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
+                "cast", type_name.j_type.name, arg.j_type.name
+            )
+        )
 
 
 def not_equal(arg1: J, arg2: J) -> J:

@@ -10,12 +10,13 @@ from .ast import print_trace
 from .exceptions import JasmineEvalException
 from .j import J, JParted, JType
 from .j_fn import JFn
+from .j_handle import JHandle
 from .temporal import tz
 
 
 class Engine:
     globals: dict[str, J]
-    handles: dict[int, any]
+    handles: dict[int, JHandle]
     sources: dict[int, (str, str)]
     builtins: dict[str, J]
 
@@ -197,6 +198,10 @@ class Engine:
         self.register_builtin("wcsv", io.wcsv)
         self.register_builtin("ls", io.ls)
         self.register_builtin("rm", io.rm)
+        self.register_builtin("hopen", io.hopen)
+        self.register_builtin("hclose", io.hclose)
+        self.register_builtin("hsync", io.hsync)
+        self.register_builtin("hasync", io.hasync)
 
         # iterator
         self.register_builtin("each", iterator.each)
@@ -268,6 +273,21 @@ class Engine:
 
     def has_var(self, name: str) -> bool:
         return name in self.globals
+
+    def set_handle(self, handle_id: int, handle: JHandle) -> None:
+        self.handles[handle_id] = handle
+
+    def get_handle(self, handle_id: int) -> JHandle:
+        return self.handles.get(handle_id)
+
+    def has_handle(self, handle_id: int) -> bool:
+        return handle_id in self.handles
+
+    def get_max_handle_id(self) -> int:
+        if len(self.handles) == 0:
+            return 3
+        else:
+            return max(1 + self.handles.keys())
 
     def complete(self, text, state):
         for cmd in self.builtins.keys():

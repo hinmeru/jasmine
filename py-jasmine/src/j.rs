@@ -51,7 +51,7 @@ impl JObj {
                     ns: num,
                     timezone: timezone.to_owned(),
                 },
-                j_type: JType::Datetime as u8,
+                j_type: JType::Timestamp as u8,
             }
         }
     }

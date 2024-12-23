@@ -95,7 +95,7 @@ class J:
     )
     j_type: JType
 
-    def __init__(self, data, j_type=JType.NULL) -> None:
+    def __init__(self, data: object, j_type=JType.NULL) -> None:
         self.data = data
         if isinstance(data, JObj):
             self.j_type = JType(data.j_type)
@@ -117,11 +117,17 @@ class J:
         elif isinstance(data, bool):
             self.j_type = JType.BOOLEAN
         elif isinstance(data, int):
-            self.j_type = JType.INT
+            if j_type == JType.NULL:
+                self.j_type = JType.INT
+            else:
+                self.j_type = j_type
         elif isinstance(data, float):
             self.j_type = JType.FLOAT
         elif isinstance(data, str):
-            self.j_type = JType.STRING
+            if j_type == JType.NULL:
+                self.j_type = JType.STRING
+            else:
+                self.j_type = j_type
         elif isinstance(data, pl.Series):
             self.j_type = JType.SERIES
         elif isinstance(data, pl.DataFrame):
@@ -216,10 +222,30 @@ class J:
         return "<%s - %s>" % (self.j_type.name, self.data)
 
     def int(self) -> int:
-        return int(self.data)
+        match self.j_type:
+            case JType.BOOLEAN:
+                return 1 if self.data else 0
+            case JType.INT:
+                return self.data
+            case JType.DATE | JType.TIME | JType.DURATION:
+                return self.data
+            case JType.DATETIME | JType.TIMESTAMP:
+                return self.data.as_py()
+            case JType.FLOAT:
+                return int(self.data)
+            case JType.STRING:
+                return int(self.data)
+            case _:
+                raise JasmineEvalException(
+                    "expect 'INT', but got %s" % self.j_type.name
+                )
 
-    def to_float(self) -> float:
-        if self.j_type == JType.FLOAT or self.j_type == JType.INT:
+    def float(self) -> float:
+        if (
+            self.j_type == JType.FLOAT
+            or self.j_type == JType.INT
+            or self.j_type == JType.BOOLEAN
+        ):
             return float(self.data)
         else:
             raise JasmineEvalException("expect 'FLOAT', but got %s" % self.j_type.name)
@@ -269,6 +295,10 @@ class J:
                     return (
                         self.data.tz() == self.data.tz()
                         and self.data.as_py() == self.data.as_py()
+                    )
+                case JType.SERIES | JType.DATAFRAME:
+                    return self.data.equals(
+                        value.data,
                     )
                 case _:
                     return self.data == value.data

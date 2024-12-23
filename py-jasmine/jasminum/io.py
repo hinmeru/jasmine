@@ -8,6 +8,7 @@ import polars as pl
 from .constant import PL_DATA_TYPE
 from .exceptions import JasmineEvalException
 from .j import J, JType
+from .j_conn import JConn
 
 
 # write partition df
@@ -179,3 +180,19 @@ def rm(pathname: J) -> J:
     return J(
         pl.Series("removed_filepath", removed_files),
     )
+
+
+def hopen(url: J) -> J:
+    pass
+
+
+def hclose(handle: J) -> J:
+    pass
+
+
+def hsync(handle: J, data: J) -> J:
+    pass
+
+
+def hasync(handle: J, data: J) -> J:
+    pass

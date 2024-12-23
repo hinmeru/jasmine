@@ -490,7 +490,7 @@ def cov1(arg1: J, arg2: J) -> J:
 
 def emean(alpha: J, arg: J) -> J:
     if arg.j_type == JType.EXPR:
-        return J(arg.to_expr().ewm_mean(alpha.to_float()))
+        return J(arg.to_expr().ewm_mean(alpha.float()))
     else:
         raise JasmineEvalException(
             "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
@@ -501,7 +501,7 @@ def emean(alpha: J, arg: J) -> J:
 
 def estd(alpha: J, arg: J) -> J:
     if arg.j_type == JType.EXPR:
-        return J(arg.to_expr().ewm_std(alpha.to_float()))
+        return J(arg.to_expr().ewm_std(alpha.float()))
     else:
         raise JasmineEvalException(
             "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
@@ -512,7 +512,7 @@ def estd(alpha: J, arg: J) -> J:
 
 def evar(alpha: J, arg: J) -> J:
     if arg.j_type == JType.EXPR:
-        return J(arg.to_expr().ewm_var(alpha.to_float()))
+        return J(arg.to_expr().ewm_var(alpha.float()))
     else:
         raise JasmineEvalException(
             "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
@@ -523,7 +523,7 @@ def evar(alpha: J, arg: J) -> J:
 
 def log(arg: J, base: J) -> J:
     if arg.j_type == JType.EXPR or base.j_type == JType.EXPR:
-        return J(arg.to_expr().log(base.to_float()))
+        return J(arg.to_expr().log(base.float()))
     else:
         raise JasmineEvalException(
             "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
@@ -644,7 +644,7 @@ def rvar1(windows_size: J, arg: J) -> J:
 
 def quantile(arg: J, quantile: J) -> J:
     if arg.j_type == JType.EXPR or quantile.j_type == JType.EXPR:
-        return J(arg.to_expr().quantile(quantile.to_float()))
+        return J(arg.to_expr().quantile(quantile.float()))
     else:
         raise JasmineEvalException(
             "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
@@ -705,7 +705,7 @@ def rquantile(windows_size: J, arg: J, quantile: J) -> J:
     if arg.j_type == JType.EXPR:
         return J(
             arg.to_expr().rolling_quantile(
-                quantile.to_float(), window_size=windows_size.int()
+                quantile.float(), window_size=windows_size.int()
             )
         )
     else:

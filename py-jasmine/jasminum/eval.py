@@ -35,7 +35,9 @@ from .context import Context
 from .engine import Engine
 from .exceptions import JasmineEvalException
 from .j import J, JType
+from .j_conn import JConn
 from .j_fn import JFn
+from .j_handle import JHandle
 from .util import date_to_num
 
 
@@ -225,6 +227,18 @@ LIST_AGG_FN = set(
 )
 
 
+def eval_ipc(j: J, engine: Engine) -> J:
+    if j.j_type == JType.STRING:
+        return eval_src(j.to_str(), 0, engine, Context(dict()))
+    elif j.j_type == JType.CAT:
+        if engine.has_var(j.to_str()):
+            raise JasmineEvalException("'%s' is not defined" % J.to_str())
+        else:
+            return engine.get_var(j.to_str())
+    elif j.j_type == JType.LIST:
+        raise JasmineEvalException("not yet implement list for IPC")
+
+
 def eval_fn(j_fn: J, engine: Engine, ctx: Context, source_id: int, start: int, *args):
     try:
         if j_fn.j_type == JType.DATAFRAME:
@@ -342,6 +356,50 @@ def eval_fn(j_fn: J, engine: Engine, ctx: Context, source_id: int, start: int, *
                             raise JasmineEvalException(
                                 "not yet implement 'each' for %s and %s" % (arg1, arg2)
                             )
+                    elif fn.fn.__name__ == "hopen":
+                        # jasmine://user:password:localhost:port
+                        # mysql://user:password:localhost:port/DB
+                        url = fn_args["url"].to_str()
+                        if url.startswith("jasmine://"):
+                            url = url[10:]
+                            user, password, host, port = url.split(":")
+                            j_conn = JConn(host, int(port), user, password)
+                            j_conn.connect()
+                            j_handle = JHandle(j_conn)
+                            handle_id = engine.get_max_handle_id()
+                            engine.set_handle(handle_id, j_handle)
+                            return J(handle_id)
+                        else:
+                            raise JasmineEvalException(
+                                "not yet implement 'hopen' for %s" % url
+                            )
+                    elif fn.fn.__name__ == "hclose":
+                        handle_id = fn_args["handle"].int()
+                        if not engine.has_handle(handle_id):
+                            raise JasmineEvalException(
+                                "unknown handle id %s" % handle_id
+                            )
+                        j_handle = engine.get_handle(handle_id)
+                        j_handle.close()
+                        engine.remove_handle(handle_id)
+                        return J(None)
+                    elif fn.fn.__name__ == "hsync":
+                        handle_id = fn_args["handle"].int()
+                        if not engine.has_handle(handle_id):
+                            raise JasmineEvalException(
+                                "unknown handle id %s" % handle_id
+                            )
+                        j_handle = engine.get_handle(handle_id)
+                        return j_handle.sync(fn_args["data"])
+                    elif fn.fn.__name__ == "hasync":
+                        handle_id = fn_args["handle"].int()
+                        if not engine.has_handle(handle_id):
+                            raise JasmineEvalException(
+                                "unknown handle id %s" % handle_id
+                            )
+                        j_handle = engine.get_handle(handle_id)
+                        j_handle.asyn(fn_args["data"])
+                        return J(None)
                     else:
                         return fn.fn(**fn_args)
                 else:

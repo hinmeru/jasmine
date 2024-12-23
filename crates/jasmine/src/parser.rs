@@ -862,7 +862,7 @@ pub fn parse(source: &str, source_id: usize) -> Result<Vec<AstNode>, PestError<R
         if e.to_string().len() > 200 {
             match e.location {
                 pest::error::InputLocation::Pos(pos) => {
-                    let span = Span::new(source, pos, pos + 1).unwrap();
+                    let span = Span::new(source, pos, pos).unwrap();
                     match span.as_str() {
                         ":" => raise_error("perhaps '='".to_string(), span),
                         _ => raise_error("syntax error".to_string(), span),
@@ -873,7 +873,7 @@ pub fn parse(source: &str, source_id: usize) -> Result<Vec<AstNode>, PestError<R
         } else {
             match e.location {
                 pest::error::InputLocation::Pos(pos) => {
-                    let span = Span::new(source, pos, pos + 1).unwrap();
+                    let span = Span::new(source, pos, pos).unwrap();
                     match span.as_str() {
                         "=" => raise_error("perhaps '=='".to_string(), span),
                         _ => e,
