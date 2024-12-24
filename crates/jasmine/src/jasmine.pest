@@ -60,7 +60,7 @@ BracketExp = { "(" ~ Exp ~ ")" }
 
 // BinaryOp for functional query
 ListItem = _{ Exp | BinaryOp }
-List     =  { "l[" ~ (ListItem ~ ",")* ~ ListItem? ~ "]" }
+List     =  { "[" ~ (ListItem ~ ",")* ~ ListItem? ~ "]" }
 
 ReturnExp = { "return" ~ Exp }
 RaiseExp  = { "raise" ~ Exp }
@@ -99,9 +99,8 @@ Term = _{
     Dataframe
   | Matrix
   | Dict
-  | Series
-  | SeriesAlt
   | List
+  | Series
   | String
   | Cats
   | CatAlt
@@ -183,8 +182,8 @@ SqlOpExp = _{
 UnarySqlExp     =  {
     (GlobalId | Id) ~ (BinarySqlExp | UnarySqlExp | FnCall | Term)
 }
-BinarySqlExp    =  { BinaryOperand ~ (BinaryOp | BinaryId | "over") ~ SqlOpExp }
-BracketSqlExp   =  { "(" ~ SqlOpExp ~ ("," ~ SqlOpExp)* ~ ","? ~ ")" }
+BinarySqlExp    =  { BinaryOperand ~ (BinaryOp | BinaryId) ~ SqlOpExp }
+BracketSqlExp   =  { "(" ~ SqlOpExp ~ ")" }
 SeriesName      = @{ Id }
 SeriesNames     = _{ (SeriesName ~ ",")* ~ SeriesName? }
 RenameSeriesExp =  { SeriesName ~ "=" ~ (SqlOpExp | BracketSqlExp) }
@@ -230,11 +229,8 @@ Integer   = @{ "-"? ~ ASCII_DIGIT+ }
 Decimal   = @{ "-"? ~ (ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT* | "inf") }
 Boolean   =  { ("true" | "false" | "0b" | "1b") }
 Null      =  { "null" | "0n" }
-Unknown   =  { (!("," | "]") ~ ANY)* }
 
-Series = { "[" ~ (Unknown ~ ",")* ~ Unknown? ~ "]" }
-
-SeriesAlt = { Scalar{2, } }
+Series = { Scalar{2, } }
 
 Scalar = @{ "-"? ~ (ASCII_DIGIT ~ (ASCII_DIGIT | "." | "-" | "D" | "T" | "n" | "b" | ":" | "u" | "i" | "f" | "s" | "m" | "h")*) }
 

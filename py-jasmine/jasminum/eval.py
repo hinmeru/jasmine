@@ -22,7 +22,6 @@ from .ast import (
     AstSeries,
     AstSkip,
     AstSql,
-    AstSqlBracket,
     AstTry,
     AstType,
     AstUnaryOp,
@@ -85,15 +84,6 @@ def eval_node(node, engine: Engine, ctx: Context, is_in_fn=False, is_in_sql=Fals
                     node.source_id, node.start, "'%s' is not defined" % node.name
                 )
             )
-    elif isinstance(node, AstSqlBracket):
-        exprs = []
-        for ast in node.exps:
-            res = eval_node(downcast_ast_node(ast), engine, ctx, is_in_fn, is_in_sql)
-            exprs.append(res)
-        if len(exprs) == 1:
-            return exprs[0]
-        else:
-            return J(exprs)
     elif isinstance(node, AstSeries):
         j = eval_node(node.exp, engine, ctx, is_in_fn, is_in_sql)
         if is_in_sql:
@@ -160,6 +150,10 @@ def eval_node(node, engine: Engine, ctx: Context, is_in_fn=False, is_in_sql=Fals
         err = eval_node(node.exp, engine, ctx, is_in_fn, is_in_sql)
         raise JasmineEvalException(
             engine.get_trace(node.source_id, node.start, err.to_str())
+        )
+    elif isinstance(node, AstList):
+        return J(
+            [eval_node(exp, engine, ctx, is_in_fn, is_in_sql) for exp in node.exps]
         )
     elif isinstance(node, AstIf):
         cond = eval_node(node.cond, engine, ctx, is_in_fn, is_in_sql)
@@ -236,7 +230,20 @@ def eval_ipc(j: J, engine: Engine) -> J:
         else:
             return engine.get_var(j.to_str())
     elif j.j_type == JType.LIST:
-        raise JasmineEvalException("not yet implement list for IPC")
+        items = j.data
+        # first item should be a string or cat
+        if items[0].j_type == JType.STRING:
+            fn = eval_node(items[0], engine, Context(dict()), False)
+        elif items[0].j_type == JType.CAT:
+            if engine.has_var(items[0].to_str()):
+                fn = engine.get_var(items[0].to_str())
+            else:
+                raise JasmineEvalException("'%s' is not defined" % items[0].to_str())
+        else:
+            raise JasmineEvalException(
+                "not support '%s' as first item of list" % items[0].j_type.name
+            )
+        return eval_fn(fn, engine, Context(dict()), 0, 0, *items[1:])
 
 
 def eval_fn(j_fn: J, engine: Engine, ctx: Context, source_id: int, start: int, *args):

@@ -91,7 +91,6 @@ pub enum AstNode {
         source_id: usize,
         start: usize,
     },
-    SqlBracket(Vec<AstNode>),
     Skip,
 }
 

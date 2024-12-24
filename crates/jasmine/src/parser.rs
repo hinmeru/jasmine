@@ -80,7 +80,7 @@ fn parse_exp(pair: Pair<Rule>, source_id: usize) -> Result<AstNode, PestError<Ru
         | Rule::Cat
         | Rule::String
         | Rule::Null => parse_j(pair),
-        Rule::Series | Rule::SeriesAlt => parse_series(pair),
+        Rule::Series => parse_series(pair),
         Rule::Cats => parse_cats(pair),
         Rule::AssignmentExp => {
             let mut pairs = pair.into_inner();
@@ -339,19 +339,46 @@ fn parse_exp(pair: Pair<Rule>, source_id: usize) -> Result<AstNode, PestError<Ru
             }
         }
         Rule::SqlExp => parse_sql(pair, source_id),
-        Rule::BracketExp => Ok(parse_exp(pair.into_inner().next().unwrap(), source_id)?),
-        Rule::BracketSqlExp => {
-            let pairs = pair.into_inner();
-            let mut list = Vec::with_capacity(pairs.len());
-            for pair in pairs {
-                list.push(parse_list(pair, source_id)?)
-            }
-            Ok(AstNode::SqlBracket(list))
+        Rule::BracketExp | Rule::BracketSqlExp => {
+            Ok(parse_exp(pair.into_inner().next().unwrap(), source_id)?)
         }
         Rule::List => {
+            let pair_clone = pair.clone();
             let pairs = pair.into_inner();
+            if pairs.len() == 0 {
+                return Ok(AstNode::J(J::MixedList(vec![])));
+            }
             let mut list = Vec::with_capacity(pairs.len());
             let mut all_j = true;
+            let mut pairs_clone = pairs.clone();
+            let first_rule = pairs_clone
+                .next()
+                .unwrap()
+                .into_inner()
+                .next()
+                .map_or(Rule::Null, |p| p.as_rule());
+            let mut all_same_type = true;
+            for pair in pairs_clone {
+                if first_rule != pair.into_inner().next().map_or(Rule::Null, |p| p.as_rule()) {
+                    all_same_type = false;
+                }
+            }
+            if all_same_type {
+                match first_rule {
+                    Rule::Cat
+                    | Rule::CatAlt
+                    | Rule::Boolean
+                    | Rule::Timestamp
+                    | Rule::Datetime
+                    | Rule::Duration
+                    | Rule::Date
+                    | Rule::Time
+                    | Rule::Decimal
+                    | Rule::String
+                    | Rule::Integer => return parse_series(pair_clone),
+                    _ => {}
+                }
+            }
             for pair in pairs {
                 let ast = parse_list(pair, source_id)?;
                 if let AstNode::J(_) = &ast {
@@ -499,6 +526,7 @@ fn parse_series(pair: Pair<Rule>) -> Result<AstNode, PestError<Rule>> {
         r"^'[^']*'$",
         r#"^"[^"]*"$"#,
         r"(^(null|0n)$|^$)",
+        r"^`.*$",
     ])
     .unwrap();
 
@@ -672,6 +700,31 @@ fn parse_series(pair: Pair<Rule>) -> Result<AstNode, PestError<Rule>> {
             Ok(AstNode::J(J::Series(Series::new("".into(), strings))))
         }
         19 => Ok(AstNode::J(J::Series(Series::new_null("".into(), len)))),
+        20 => {
+            let cats = unknowns
+                .iter()
+                .map(|s| {
+                    if Regex::new(r"^`.*$").unwrap().is_match(s.as_bytes()) {
+                        Ok(Some(s[1..].to_owned()))
+                    } else if *s == "" || *s == "null" || *s == "0n" {
+                        Ok(None)
+                    } else {
+                        Err(raise_error(
+                            format!("'{}': {}", s, "not a categorical"),
+                            span,
+                        ))
+                    }
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(AstNode::J(J::Series(
+                Series::new("".into(), cats)
+                    .cast(&PolarsDataType::Categorical(
+                        None,
+                        CategoricalOrdering::Lexical,
+                    ))
+                    .map_err(|e| raise_error(e.to_string(), span))?,
+            )))
+        }
         _ => Err(raise_error("unknown series".to_owned(), span)),
     }
 }
@@ -862,7 +915,8 @@ pub fn parse(source: &str, source_id: usize) -> Result<Vec<AstNode>, PestError<R
         if e.to_string().len() > 200 {
             match e.location {
                 pest::error::InputLocation::Pos(pos) => {
-                    let span = Span::new(source, pos, pos).unwrap();
+                    let span = Span::new(source, pos, pos + 1)
+                        .unwrap_or(Span::new(source, pos, pos).unwrap());
                     match span.as_str() {
                         ":" => raise_error("perhaps '='".to_string(), span),
                         _ => raise_error("syntax error".to_string(), span),
@@ -873,7 +927,8 @@ pub fn parse(source: &str, source_id: usize) -> Result<Vec<AstNode>, PestError<R
         } else {
             match e.location {
                 pest::error::InputLocation::Pos(pos) => {
-                    let span = Span::new(source, pos, pos).unwrap();
+                    let span = Span::new(source, pos, pos + 1)
+                        .unwrap_or(Span::new(source, pos, pos).unwrap());
                     match span.as_str() {
                         "=" => raise_error("perhaps '=='".to_string(), span),
                         _ => e,

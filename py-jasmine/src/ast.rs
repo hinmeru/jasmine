@@ -35,7 +35,6 @@ pub enum AstType {
     List,
     Series,
     Sql,
-    SqlBracket,
     Skip,
 }
 
@@ -63,7 +62,6 @@ impl Ast {
             AstNode::List(..) => AstType::List,
             AstNode::Series { .. } => AstType::Series,
             AstNode::Sql { .. } => AstType::Sql,
-            AstNode::SqlBracket(..) => AstType::SqlBracket,
             AstNode::Skip => AstType::Skip,
         };
         ast_type as u8
@@ -433,20 +431,6 @@ impl Ast {
         }
     }
 
-    pub fn sql_bracket(&self) -> PyResult<AstSqlBracket> {
-        if let AstNode::SqlBracket(nodes) = &self.0 {
-            Ok(AstSqlBracket {
-                exps: nodes.into_iter().map(|n| Ast(n.clone())).collect(),
-            })
-        } else {
-            Err(PyJasmineErr::new_err(format!(
-                "failed to refer {0} from {1}",
-                "ast sql bracket",
-                self.get_ast_type()
-            )))
-        }
-    }
-
     pub fn skip(&self) -> PyResult<AstSkip> {
         if let AstNode::Skip = &self.0 {
             Ok(AstSkip {})
@@ -594,9 +578,4 @@ pub struct AstSql {
     take: Ast,
     source_id: usize,
     start: usize,
-}
-
-#[pyclass(get_all)]
-pub struct AstSqlBracket {
-    exps: Vec<Ast>,
 }

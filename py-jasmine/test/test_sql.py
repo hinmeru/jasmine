@@ -34,6 +34,13 @@ def prepare_engine() -> Engine:
     [
         ("select count i dyn 1000ns, time, sym from trade", (5, 3)),
         ("select count i dyn 1000ns, time, sym from quote", (6, 3)),
+        ("select from trade where price ~between [0.3, 0.5]", (3, 4)),
+        ("select from trade where price ~between [price, price]", (9, 4)),
+        ("select from quote where 1.1 ~between [ask, bid]", (1, 6)),
+        (
+            "select sym, ask_size, total_ask_size=sum(ask_size) ~over sym from quote",
+            (15, 3),
+        ),
     ],
 )
 def test_sql(src, expect, prepare_engine):

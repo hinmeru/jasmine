@@ -8,8 +8,8 @@ use parse::parse_source_code;
 pub mod ast;
 use ast::{
     Ast, AstAssign, AstBinOp, AstCall, AstDataFrame, AstDict, AstFn, AstId, AstIf, AstIndexAssign,
-    AstList, AstMatrix, AstOp, AstRaise, AstReturn, AstSeries, AstSkip, AstSql, AstSqlBracket,
-    AstTry, AstUnaryOp, AstWhile,
+    AstList, AstMatrix, AstOp, AstRaise, AstReturn, AstSeries, AstSkip, AstSql, AstTry, AstUnaryOp,
+    AstWhile,
 };
 use pyo3::prelude::*;
 
@@ -47,7 +47,6 @@ fn jasminum(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<AstList>()?;
     m.add_class::<AstSeries>()?;
     m.add_class::<AstSql>()?;
-    m.add_class::<AstSqlBracket>()?;
     m.add_class::<AstSkip>()?;
     m.add_function(wrap_pyfunction!(parse_source_code, m)?)?;
     m.add_function(wrap_pyfunction!(print_trace, m)?)?;

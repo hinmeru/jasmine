@@ -38,7 +38,7 @@ pip install jasminum
 ### List(Mixed Data Types)
 
 ```
-l[1, null, `cat]
+[1, null, `cat]
 ```
 
 ### Series
@@ -75,18 +75,16 @@ l[1, null, `cat]
 1 0n -1
 
 // i8
-[0i8, 1, 2]
+0i8 1 2
 
 // u8
 0n 1u8 3
 
 // bool
 1b 0b 1b 0n
-[true, null, false]
 
 // cats
 `a`b`c
-['c','d',null]
 ```
 
 ### Dataframe
@@ -99,8 +97,8 @@ df[series1= `i32$[], series2= `f32$[]]
 
 
 // non-empty series
-df[series1 = `i32$[ , , ], series2 = `f32$[null, 2.0, 3.0]]
-df[series1 = [0i32, , ], series2 = [null, 2.0, 3.0]]
+df[series1 = `i32$0n 0n 0n, series2 = `f32$0n 2.0 3.0]
+df[series1 = 0i32 0n 0n, series2 = 0n 2.0 3.0]
 ```
 
 ### Matrix (nyi)

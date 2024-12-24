@@ -191,7 +191,7 @@ class J:
             case JType.PARTED:
                 return str(self.data)
             case JType.LIST:
-                output = "l[\n"
+                output = "[\n"
                 for j in self.data:
                     output += f"  {j.short_format()},\n"
                 return output + "]"

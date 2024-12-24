@@ -29,9 +29,9 @@ def test_op(src, expect):
     [
         ("2024-10-23+1D00:12:34.5", J(date(2024, 10, 24))),
         ("2024-10-23D+0D00:12:34.5", J.from_nanos(1729642354500000000, "UTC")),
-        ("[,,]", J(pl.Series("", [None, None, None]))),
+        ("0n 0n 0n", J(pl.Series("", [None, None, None]))),
         (
-            "df[series1 = [0i32,,], series2 = [null, 2.0, 3.0]]",
+            "df[series1 = 0i32 0n 0n, series2 = 0n 2.0 3.0]",
             J(
                 pl.DataFrame(
                     [

@@ -492,6 +492,8 @@ def cast(type_name: J, arg: J) -> J:
                     return J(arg.data.dt.millisecond())
                 case "ns":
                     return J(arg.data.dt.nanosecond())
+    elif arg.j_type == JType.LIST and len(arg.data) == 0 and name in PL_DATA_TYPE:
+        return J(pl.Series("", [], PL_DATA_TYPE[name]))
     elif arg.j_type.value <= 10:
         if name == "string" and arg.j_type.value <= 8:
             return J(str(arg))

@@ -50,7 +50,7 @@ fn parse_case00() {
             "   -> Exp -> UnaryExp",
             "       -> Id",
             "       -> BinaryExp",
-            "         -> SeriesAlt",
+            "         -> Series",
             "           -> Scalar",
             "           -> Scalar",
             "         -> BinaryOp",
@@ -128,10 +128,10 @@ fn parse_case01() {
 #[test]
 fn parse_case02() {
     let code = "
-    qty = [7i16,8,9];
-    df0 = df[sym = `a`b`b, col1 = [1, 2, 3], col2 = [1.0, 2.0, 3.0], [4, 5, 6], qty];
+    qty = 7i16 8 9;
+    df0 = df[sym = `a`b`b, col1 = 1 2 3, col2 = 1.0 2.0 3.0, 4 5 6, qty];
     df0 = select sum col1+col2, newCol=col2 from t where sym==`a;
-    select from df0 where series2  ~between (2.0, 2.2);
+    select from df0 where series2  ~between [2.0, 2.2];
     select wmean(qty, price) by sym from df0;
     count df0
     ";
@@ -149,9 +149,9 @@ fn parse_case02() {
             "Exp -> AssignmentExp",
             "   -> Id",
             "   -> Exp -> Series",
-            "       -> Unknown",
-            "       -> Unknown",
-            "       -> Unknown",
+            "       -> Scalar",
+            "       -> Scalar",
+            "       -> Scalar",
             "Exp -> AssignmentExp",
             "   -> Id",
             "   -> Exp -> Dataframe",
@@ -161,19 +161,19 @@ fn parse_case02() {
             "       -> SeriesExp -> RenameSeriesExp",
             "           -> SeriesName",
             "           -> Series",
-            "             -> Unknown",
-            "             -> Unknown",
-            "             -> Unknown",
+            "             -> Scalar",
+            "             -> Scalar",
+            "             -> Scalar",
             "       -> SeriesExp -> RenameSeriesExp",
             "           -> SeriesName",
             "           -> Series",
-            "             -> Unknown",
-            "             -> Unknown",
-            "             -> Unknown",
+            "             -> Scalar",
+            "             -> Scalar",
+            "             -> Scalar",
             "       -> SeriesExp -> Series",
-            "           -> Unknown",
-            "           -> Unknown",
-            "           -> Unknown",
+            "           -> Scalar",
+            "           -> Scalar",
+            "           -> Scalar",
             "       -> SeriesExp -> Id",
             "Exp -> AssignmentExp",
             "   -> Id",
@@ -199,9 +199,9 @@ fn parse_case02() {
             "   -> FilterExp -> BinarySqlExp",
             "       -> Id",
             "       -> BinaryId",
-            "       -> BracketSqlExp",
-            "         -> Decimal",
-            "         -> Decimal",
+            "       -> List",
+            "         -> Exp -> Decimal",
+            "         -> Exp -> Decimal",
             "Exp -> SqlExp",
             "   -> SelectOp -> SeriesExp -> FnCall",
             "         -> Id",
@@ -263,10 +263,10 @@ fn parse_case02_01() {
 #[test]
 fn parse_case03() {
     let code = "
-    r1 = eval l[*, 9, 9];
+    r1 = eval [*, 9, 9];
     f = fn(x, y){ x - y};
-    r2 = eval(l[`f, 9, 1]);
-    t = timeit(l[+, 1, 1], 1000);
+    r2 = eval([`f, 9, 1]);
+    t = timeit([+, 1, 1], 1000);
     t
     ";
     let pairs = match JParser::parse(Rule::Program, code) {
@@ -485,9 +485,9 @@ fn parse_case06() {
             "                     -> Integer",
             "                     -> BinaryOp",
             "                     -> Exp -> Id",
-            "   -> Arg -> Exp -> Series",
-            "         -> Unknown",
-            "         -> Unknown",
+            "   -> Arg -> Exp -> List",
+            "         -> Exp -> Integer",
+            "         -> Exp -> Integer",
             "   -> Arg -> Exp -> Integer",
             "EOI",
             ""

@@ -56,6 +56,7 @@ class Engine:
 
         # expr
         self.register_builtin("col", expr.col)
+        self.register_builtin("lit", expr.lit)
         self.register_builtin("selector", expr.selector)
 
         # math

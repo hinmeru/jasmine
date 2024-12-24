@@ -8,6 +8,8 @@ use polars::{
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum J {
+    Null,
+
     Boolean(bool),
     I64(i64),
     Date(i32),                               // start from 1970.01.01
@@ -18,8 +20,6 @@ pub enum J {
     F64(f64),
     String(String),
     Cat(String),
-
-    Null,
 
     Series(Series), // -> Arrow IPC
 
@@ -85,6 +85,22 @@ impl J {
     pub fn is_bool(&self) -> bool {
         match self {
             J::Boolean(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_scalar(&self) -> bool {
+        match self {
+            J::Boolean(_)
+            | J::I64(_)
+            | J::F64(_)
+            | J::Date(_)
+            | J::Timestamp { .. }
+            | J::Datetime { .. }
+            | J::Time(_)
+            | J::Duration(_)
+            | J::Cat(_)
+            | J::String(_) => true,
             _ => false,
         }
     }
