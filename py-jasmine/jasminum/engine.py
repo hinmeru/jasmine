@@ -17,7 +17,9 @@ from .temporal import tz
 class Engine:
     globals: dict[str, J]
     handles: dict[int, JHandle]
+    # source_id -> (source_code, filepath)
     sources: dict[int, (str, str)]
+    source_paths: dict[str, int]
     builtins: dict[str, J]
 
     def __init__(self) -> None:
@@ -25,6 +27,7 @@ class Engine:
         self.handles = dict()
         self.sources = dict()
         self.builtins = dict()
+        self.source_paths = dict()
 
         # operator
         self.register_builtin("!=", op.not_equal)
@@ -283,6 +286,20 @@ class Engine:
 
     def has_handle(self, handle_id: int) -> bool:
         return handle_id in self.handles
+
+    def remove_handle(self, handle_id: int) -> None:
+        self.handles.pop(handle_id)
+
+    def get_source(self, source_id: int) -> tuple[str, str]:
+        return self.sources.get(source_id, ("", ""))
+
+    def set_source(self, source_id: int, source: tuple[str, str]) -> None:
+        self.sources[source_id] = source
+        filepath = source[0]
+        self.source_paths[filepath] = source_id
+
+    def has_source(self, source_id: int) -> bool:
+        return source_id in self.sources
 
     def get_max_handle_id(self) -> int:
         if len(self.handles) == 0:

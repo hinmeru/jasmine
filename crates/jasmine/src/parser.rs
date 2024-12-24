@@ -485,6 +485,7 @@ impl_parse_num!(parse_u32, "u32", u32);
 impl_parse_num!(parse_i32, "i32", i32);
 impl_parse_num!(parse_u64, "u64", u64);
 impl_parse_num!(parse_i64, "i64", i64);
+impl_parse_num!(parse_i128, "i128", i128);
 impl_parse_num!(parse_f32, "f32", f32);
 impl_parse_num!(parse_f64, "f64", f64);
 
@@ -527,6 +528,7 @@ fn parse_series(pair: Pair<Rule>) -> Result<AstNode, PestError<Rule>> {
         r#"^"[^"]*"$"#,
         r"(^(null|0n)$|^$)",
         r"^`.*$",
+        r"^-?\d+(i128)?$",
     ])
     .unwrap();
 
@@ -725,6 +727,7 @@ fn parse_series(pair: Pair<Rule>) -> Result<AstNode, PestError<Rule>> {
                     .map_err(|e| raise_error(e.to_string(), span))?,
             )))
         }
+        21 => parse_i128(unknowns, span),
         _ => Err(raise_error("unknown series".to_owned(), span)),
     }
 }

@@ -53,11 +53,15 @@ async def handle_client(engine: Engine, client: socket.socket, is_local: bool):
     while True:
         try:
             data = await asyncio.get_event_loop().sock_recv(client, 8)
+            if not data:
+                cprint("client disconnected", "red")
+                break
             is_sync = data[1] == 1
             msg_len = int.from_bytes(data[4:], "little")
             data = await asyncio.get_event_loop().sock_recv(client, msg_len)
             # print(f"received {data} bytes from client")
             j = serde.deserialize(data)
+            # print(f"received {j} from client")
             try:
                 res = eval_ipc(j, engine)
                 if is_sync:
@@ -68,6 +72,7 @@ async def handle_client(engine: Engine, client: socket.socket, is_local: bool):
                     )
                     await asyncio.get_event_loop().sock_sendall(client, msg_bytes)
             except Exception as e:
+                # traceback.print_exc()
                 cprint(str(e), "red")
                 err_bytes = serde.serialize_err(str(e))
                 await asyncio.get_event_loop().sock_sendall(client, err_bytes)

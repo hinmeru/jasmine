@@ -23,7 +23,6 @@ from .ast import (
     AstSkip,
     AstSql,
     AstTry,
-    AstType,
     AstUnaryOp,
     AstWhile,
     JObj,
@@ -45,6 +44,7 @@ def import_path(path: str, engine: Engine):
 
 
 def eval_src(source_code: str, source_id: int, engine: Engine, ctx: Context) -> J:
+    engine.set_source(source_id, (source_code, ""))
     nodes = parse_source_code(source_code, source_id)
     res = J(None, JType.NULL)
     for node in nodes:
@@ -226,14 +226,14 @@ def eval_ipc(j: J, engine: Engine) -> J:
         return eval_src(j.to_str(), 0, engine, Context(dict()))
     elif j.j_type == JType.CAT:
         if engine.has_var(j.to_str()):
-            raise JasmineEvalException("'%s' is not defined" % J.to_str())
-        else:
             return engine.get_var(j.to_str())
+        else:
+            raise JasmineEvalException("'%s' is not defined" % j.to_str())
     elif j.j_type == JType.LIST:
         items = j.data
         # first item should be a string or cat
         if items[0].j_type == JType.STRING:
-            fn = eval_node(items[0], engine, Context(dict()), False)
+            fn = eval_src(items[0].to_str(), 0, engine, Context(dict()))
         elif items[0].j_type == JType.CAT:
             if engine.has_var(items[0].to_str()):
                 fn = engine.get_var(items[0].to_str())

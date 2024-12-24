@@ -391,6 +391,10 @@ def std1(arg: J) -> J:
 def sum(arg: J) -> J:
     if arg.j_type == JType.EXPR:
         return J(arg.to_expr().sum())
+    elif arg.is_numeric_scalar():
+        return arg
+    elif arg.j_type == JType.SERIES:
+        return J(arg.data.sum())
     else:
         raise JasmineEvalException(
             "unsupported operand type for '{0}': '{1}'".format("sum", arg.j_type.name)
