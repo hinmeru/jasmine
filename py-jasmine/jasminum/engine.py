@@ -206,13 +206,15 @@ class Engine:
         self.register_builtin("hclose", io.hclose)
         self.register_builtin("hsync", io.hsync)
         self.register_builtin("hasync", io.hasync)
-
         # iterator
         self.register_builtin("each", iterator.each)
 
         # config
         self.register_builtin("cfg_strlen", cfg.strlen)
         self.register_builtin("cfg_tbl", cfg.tbl)
+
+        # sys
+        self.register_builtin("handle", handle)
 
         # vars
         self.builtins["timezone"] = J(
@@ -305,7 +307,35 @@ class Engine:
         if len(self.handles) == 0:
             return 3
         else:
-            return max(1 + self.handles.keys())
+            return max(self.handles.keys()) + 1
+
+    def get_min_handle_id(self) -> int:
+        if len(self.handles) == 0:
+            return -3
+        else:
+            return min(self.handles.keys()) - 1
+
+    def list_handles(self) -> pl.DataFrame:
+        handle_ids = []
+        conn_types = []
+        local_hosts = []
+        ports = []
+        for k, v in self.handles.items():
+            if k > 0:
+                handle_ids.append(k)
+            else:
+                handle_ids.append(None)
+            conn_types.append(v._type)
+            local_hosts.append(v._host)
+            ports.append(v._port)
+        return pl.DataFrame(
+            [
+                pl.Series("handle_id", handle_ids, dtype=pl.Int64),
+                pl.Series("conn_type", conn_types, dtype=pl.Utf8),
+                pl.Series("host", local_hosts, dtype=pl.Utf8),
+                pl.Series("port", ports, dtype=pl.Int64),
+            ]
+        )
 
     def complete(self, text, state):
         for cmd in self.builtins.keys():
@@ -314,3 +344,7 @@ class Engine:
                     return cmd
                 else:
                     state -= 1
+
+
+def handle() -> J:
+    pass

@@ -12,7 +12,6 @@ PL_DATA_TYPE = {
     "i32": pl.Int32,
     "u64": pl.UInt64,
     "i64": pl.Int64,
-    "i128": pl.Int128,
     "f32": pl.Float32,
     "f64": pl.Float64,
     "date": pl.Date,

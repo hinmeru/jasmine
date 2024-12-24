@@ -292,10 +292,13 @@ def eval_fn(j_fn: J, engine: Engine, ctx: Context, source_id: int, start: int, *
         elif j_fn.j_type == JType.FN:
             fn = j_fn.data
             if fn.arg_num < len(args):
-                raise engine.get_trace(
-                    source_id,
-                    start,
-                    "takes %s arguments but %s were given" % (fn.arg_num, len(args)),
+                raise JasmineEvalException(
+                    engine.get_trace(
+                        source_id,
+                        start,
+                        "takes %s arguments but %s were given"
+                        % (fn.arg_num, len(args)),
+                    )
                 )
 
             fn_args = fn.args
@@ -372,10 +375,24 @@ def eval_fn(j_fn: J, engine: Engine, ctx: Context, source_id: int, start: int, *
                             user, password, host, port = url.split(":")
                             j_conn = JConn(host, int(port), user, password)
                             j_conn.connect()
-                            j_handle = JHandle(j_conn)
+                            j_handle = JHandle(j_conn, "jasmine", host, int(port))
                             handle_id = engine.get_max_handle_id()
                             engine.set_handle(handle_id, j_handle)
                             return J(handle_id)
+                        elif url.startswith("duckdb://"):
+                            url = url[9:]
+                            try:
+                                import duckdb
+
+                                conn = duckdb.connect(url)
+                                j_handle = JHandle(conn, "duckdb", url, 0)
+                                handle_id = engine.get_max_handle_id()
+                                engine.set_handle(handle_id, j_handle)
+                                return J(handle_id)
+                            except ImportError:
+                                raise JasmineEvalException(
+                                    "'duckdb' module not found. 'pip install duckdb' first"
+                                )
                         else:
                             raise JasmineEvalException(
                                 "not yet implement 'hopen' for %s" % url
@@ -407,6 +424,8 @@ def eval_fn(j_fn: J, engine: Engine, ctx: Context, source_id: int, start: int, *
                         j_handle = engine.get_handle(handle_id)
                         j_handle.asyn(fn_args["data"])
                         return J(None)
+                    elif fn.fn.__name__ == "handle":
+                        return J(engine.list_handles())
                     else:
                         return fn.fn(**fn_args)
                 else:

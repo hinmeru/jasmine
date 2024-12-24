@@ -34,3 +34,6 @@ Repository = "https://github.com/hinmeru/jasmine"
 
 [project.scripts]
 jasminum = "jasminum.main:main"
+
+[project.optional-dependencies]
+duckdb = ["duckdb >= 1.1.0"]

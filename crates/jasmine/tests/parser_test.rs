@@ -69,7 +69,8 @@ fn parse_case01() {
     r = f(1, 2, 3);
     g = f(1, , 9);
     h = fn(){9};
-    g 3
+    g 3;
+    handle();
     ";
     let pairs = match JParser::parse(Rule::Program, code) {
         Ok(p) => p,
@@ -118,6 +119,9 @@ fn parse_case01() {
             "Exp -> UnaryExp",
             "   -> Id",
             "   -> Integer",
+            "Exp -> FnCall",
+            "   -> Id",
+            "   -> Arg -> Skip",
             "EOI",
             ""
         ],

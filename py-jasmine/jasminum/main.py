@@ -13,6 +13,7 @@ from . import serde
 from .context import Context
 from .engine import Engine
 from .eval import eval_ipc, eval_src
+from .j_handle import JHandle
 
 pl.Config.set_fmt_str_lengths(80)
 pl.Config.set_tbl_rows(20)
@@ -173,6 +174,10 @@ async def async_main():
                 try:
                     client, addr = await loop.sock_accept(server)
                     cprint(f"accepted connection from {addr}", "green")
+                    engine.set_handle(
+                        engine.get_min_handle_id(),
+                        JHandle(None, "incoming", addr[0], addr[1]),
+                    )
                     asyncio.create_task(
                         handle_client(engine, client, str(addr) == "127.0.0.1")
                     )

@@ -139,9 +139,15 @@ fn parse_exp(pair: Pair<Rule>, source_id: usize) -> Result<AstNode, PestError<Ru
             let span = pair.as_span();
             let mut pairs = pair.into_inner();
             let f = parse_exp(pairs.next().unwrap(), source_id)?;
-            let mut args = Vec::with_capacity(pairs.len() - 1);
+            let arg_len = pairs.len();
+            let mut args = Vec::with_capacity(arg_len);
             for pair in pairs {
-                args.push(parse_exp(pair.into_inner().next().unwrap(), source_id)?)
+                let arg = pair.into_inner().next().unwrap();
+                if arg_len == 1 && arg.as_rule() == Rule::Skip {
+                    args = vec![];
+                    break;
+                }
+                args.push(parse_exp(arg, source_id)?)
             }
             // if f is eval, and first args is J::String, parse J::string
             Ok(AstNode::Call {
@@ -485,7 +491,6 @@ impl_parse_num!(parse_u32, "u32", u32);
 impl_parse_num!(parse_i32, "i32", i32);
 impl_parse_num!(parse_u64, "u64", u64);
 impl_parse_num!(parse_i64, "i64", i64);
-impl_parse_num!(parse_i128, "i128", i128);
 impl_parse_num!(parse_f32, "f32", f32);
 impl_parse_num!(parse_f64, "f64", f64);
 
@@ -528,7 +533,6 @@ fn parse_series(pair: Pair<Rule>) -> Result<AstNode, PestError<Rule>> {
         r#"^"[^"]*"$"#,
         r"(^(null|0n)$|^$)",
         r"^`.*$",
-        r"^-?\d+(i128)?$",
     ])
     .unwrap();
 
@@ -727,7 +731,6 @@ fn parse_series(pair: Pair<Rule>) -> Result<AstNode, PestError<Rule>> {
                     .map_err(|e| raise_error(e.to_string(), span))?,
             )))
         }
-        21 => parse_i128(unknowns, span),
         _ => Err(raise_error("unknown series".to_owned(), span)),
     }
 }
