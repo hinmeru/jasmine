@@ -160,15 +160,19 @@ async def async_main():
     task = asyncio.create_task(handle_user_input(engine, args.debug))
 
     if args.port > 0:
-        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server.bind(("0.0.0.0", args.port))
-        server.listen()
-        server.setblocking(False)
-        loop = asyncio.get_event_loop()
         cprint(
             "    listen and serve on 0.0.0.0:%s\n" % args.port, "green", attrs=["bold"]
         )
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            server.bind(("0.0.0.0", args.port))
+            server.listen()
+        except Exception as e:
+            cprint(e, "red")
+            exit(1)
+        server.setblocking(False)
+        loop = asyncio.get_event_loop()
         try:
             while True:
                 try:

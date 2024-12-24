@@ -101,7 +101,7 @@ df[series1 = `i32$0n 0n 0n, series2 = `f32$0n 2.0 3.0]
 df[series1 = 0i32 0n 0n, series2 = 0n 2.0 3.0]
 ```
 
-### Matrix (nyi)
+### Matrix (not yet implemented)
 
 a 2d float array
 
@@ -121,6 +121,7 @@ x[[1, 2], [2, 3], [4, null]]
 
 // non-empty map
 {a:1, b:2, c:3}
+// not yet implemented
 dict(`a`b`c, 1 2 3)
 ```
 
