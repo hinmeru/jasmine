@@ -3,7 +3,7 @@
 ## Listen on port
 
 ```bash
-jasuminum -p 12345
+jasminum -p 12345
 ```
 
 ## Built-in functions
@@ -59,12 +59,13 @@ handle()
 sample output:
 
 ```
-shape: (2, 4)
+shape: (3, 4)
 ┌───────────┬───────────┬───────────┬──────┐
 │ handle_id ┆ conn_type ┆ host      ┆ port │
 │ ---       ┆ ---       ┆ ---       ┆ ---  │
 │ i64       ┆ str       ┆ str       ┆ i64  │
 ╞═══════════╪═══════════╪═══════════╪══════╡
+│ null      ┆ incoming  ┆ 127.0.0.1 ┆ 44848│
 │ 3         ┆ jasmine   ┆ localhost ┆ 1800 │
 │ 4         ┆ duckdb    ┆           ┆ 0    │
 └───────────┴───────────┴───────────┴──────┘
