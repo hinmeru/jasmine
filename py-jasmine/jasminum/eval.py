@@ -1,8 +1,12 @@
+import asyncio
+import socket
 from copy import copy
 from typing import Callable
 
 import polars as pl
+from termcolor import cprint
 
+from . import serde
 from .ast import (
     Ast,
     AstAssign,
@@ -375,9 +379,19 @@ def eval_fn(j_fn: J, engine: Engine, ctx: Context, source_id: int, start: int, *
                             user, password, host, port = url.split(":")
                             j_conn = JConn(host, int(port), user, password)
                             j_conn.connect()
-                            j_handle = JHandle(j_conn, "jasmine", host, int(port))
+                            j_handle = JHandle(
+                                j_conn, "jasmine", host, int(port), "out"
+                            )
                             handle_id = engine.get_max_handle_id()
                             engine.set_handle(handle_id, j_handle)
+                            asyncio.create_task(
+                                handle_ipc(
+                                    engine,
+                                    j_conn.socket,
+                                    host == "localhost" or host == "127.0.0.1",
+                                    handle_id,
+                                )
+                            )
                             return J(handle_id)
                         elif url.startswith("duckdb://"):
                             url = url[9:]
@@ -671,3 +685,39 @@ def eval_sql(
     except Exception as e:
         # raise e
         raise JasmineEvalException(engine.get_trace(source_id, start, str(e)))
+
+
+async def handle_ipc(
+    engine: Engine, client: socket.socket, is_local: bool, handle_id: int
+):
+    while True:
+        try:
+            data = await asyncio.get_event_loop().sock_recv(client, 8)
+            if not data:
+                cprint(f"handle id: '{handle_id}' disconnected", "red")
+                break
+            is_sync = data[1] == 1
+            msg_len = int.from_bytes(data[4:], "little")
+            data = await asyncio.get_event_loop().sock_recv(client, msg_len)
+            # print(f"received {data} bytes from client")
+            j = serde.deserialize(data)
+            # print(f"received {j} from client")
+            try:
+                res = eval_ipc(j, engine)
+                if is_sync:
+                    msg_bytes = serde.serialize(res, not is_local)
+                    await asyncio.get_event_loop().sock_sendall(
+                        client,
+                        bytes([1, 2, 0, 0]) + len(msg_bytes).to_bytes(4, "little"),
+                    )
+                    await asyncio.get_event_loop().sock_sendall(client, msg_bytes)
+            except Exception as e:
+                # traceback.print_exc()
+                cprint(str(e), "red")
+                err_bytes = serde.serialize_err(str(e))
+                await asyncio.get_event_loop().sock_sendall(client, err_bytes)
+        except Exception as e:
+            cprint(e, "red")
+            break
+    client.close()
+    engine.remove_handle(handle_id)

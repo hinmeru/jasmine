@@ -9,10 +9,10 @@ import traceback
 import polars as pl
 from termcolor import cprint
 
-from . import serde
 from .context import Context
 from .engine import Engine
-from .eval import eval_ipc, eval_src
+from .eval import eval_src, handle_ipc
+from .j_conn import JConn
 from .j_handle import JHandle
 
 pl.Config.set_fmt_str_lengths(80)
@@ -48,39 +48,6 @@ parser.add_argument(
     dest="port",
     help="port number to listen on",
 )
-
-
-async def handle_client(engine: Engine, client: socket.socket, is_local: bool):
-    while True:
-        try:
-            data = await asyncio.get_event_loop().sock_recv(client, 8)
-            if not data:
-                cprint("client disconnected", "red")
-                break
-            is_sync = data[1] == 1
-            msg_len = int.from_bytes(data[4:], "little")
-            data = await asyncio.get_event_loop().sock_recv(client, msg_len)
-            # print(f"received {data} bytes from client")
-            j = serde.deserialize(data)
-            # print(f"received {j} from client")
-            try:
-                res = eval_ipc(j, engine)
-                if is_sync:
-                    msg_bytes = serde.serialize(res, not is_local)
-                    await asyncio.get_event_loop().sock_sendall(
-                        client,
-                        bytes([1, 2, 0, 0]) + len(msg_bytes).to_bytes(4, "little"),
-                    )
-                    await asyncio.get_event_loop().sock_sendall(client, msg_bytes)
-            except Exception as e:
-                # traceback.print_exc()
-                cprint(str(e), "red")
-                err_bytes = serde.serialize_err(str(e))
-                await asyncio.get_event_loop().sock_sendall(client, err_bytes)
-        except Exception as e:
-            cprint(e, "red")
-            break
-    client.close()
 
 
 async def get_user_input(prompt: str) -> str:
@@ -178,12 +145,19 @@ async def async_main():
                 try:
                     client, addr = await loop.sock_accept(server)
                     cprint(f"accepted connection from {addr}", "green")
+                    handle_id = engine.get_max_handle_id()
                     engine.set_handle(
-                        engine.get_min_handle_id(),
-                        JHandle(None, "incoming", addr[0], addr[1]),
+                        handle_id,
+                        JHandle(
+                            JConn.from_socket(client, addr[0], addr[1]),
+                            "jasmine",
+                            addr[0],
+                            addr[1],
+                            "in",
+                        ),
                     )
                     asyncio.create_task(
-                        handle_client(engine, client, str(addr) == "127.0.0.1")
+                        handle_ipc(engine, client, str(addr) == "127.0.0.1", handle_id)
                     )
                 except asyncio.exceptions.CancelledError:
                     break

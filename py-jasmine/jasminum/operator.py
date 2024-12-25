@@ -530,6 +530,16 @@ def cast(type_name: J, arg: J) -> J:
 def not_equal(arg1: J, arg2: J) -> J:
     if arg1.j_type == JType.EXPR or arg2.j_type == JType.EXPR:
         return J(arg1.to_expr().ne_missing(arg2.to_expr()))
+    elif arg1.j_type == JType.NULL and arg2.j_type == JType.NULL:
+        return J(True)
+    elif arg1.j_type == JType.NULL or arg2.j_type == JType.NULL:
+        return J(False)
+    elif arg1.is_numeric_scalar() and arg2.is_numeric_scalar():
+        return J(arg1.data != arg2.data)
+    elif arg1.j_type == JType.STRING and arg2.j_type == JType.STRING:
+        return J(arg1.data != arg2.data)
+    elif arg1.j_type == JType.CAT and arg2.j_type == JType.CAT:
+        return J(arg1.data != arg2.data)
     else:
         raise JasmineEvalException(
             "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
@@ -541,6 +551,8 @@ def not_equal(arg1: J, arg2: J) -> J:
 def less_equal(arg1: J, arg2: J) -> J:
     if arg1.j_type == JType.EXPR or arg2.j_type == JType.EXPR:
         return J(arg1.to_expr().le(arg2.to_expr()))
+    elif arg1.is_numeric_scalar() and arg2.is_numeric_scalar():
+        return J(arg1.data <= arg2.data)
     else:
         raise JasmineEvalException(
             "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(

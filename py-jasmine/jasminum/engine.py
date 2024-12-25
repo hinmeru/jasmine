@@ -309,17 +309,12 @@ class Engine:
         else:
             return max(self.handles.keys()) + 1
 
-    def get_min_handle_id(self) -> int:
-        if len(self.handles) == 0:
-            return -3
-        else:
-            return min(self.handles.keys()) - 1
-
     def list_handles(self) -> pl.DataFrame:
         handle_ids = []
         conn_types = []
         local_hosts = []
         ports = []
+        directions = []
         for k, v in self.handles.items():
             if k > 0:
                 handle_ids.append(k)
@@ -328,12 +323,14 @@ class Engine:
             conn_types.append(v._type)
             local_hosts.append(v._host)
             ports.append(v._port)
+            directions.append(v._direction)
         return pl.DataFrame(
             [
                 pl.Series("handle_id", handle_ids, dtype=pl.Int64),
                 pl.Series("conn_type", conn_types, dtype=pl.Utf8),
                 pl.Series("host", local_hosts, dtype=pl.Utf8),
                 pl.Series("port", ports, dtype=pl.Int64),
+                pl.Series("direction", directions, dtype=pl.Utf8),
             ]
         )
 

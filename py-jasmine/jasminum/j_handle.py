@@ -1,3 +1,5 @@
+from typing import Literal
+
 from .exceptions import JasmineEvalException
 from .j import J, JType
 from .j_conn import JConn
@@ -8,12 +10,21 @@ class JHandle:
     _type: str
     _host: str
     _port: int
+    _direction: Literal["int", "out"]
 
-    def __init__(self, conn: object, conn_type="jasmine", host="127.0.0.1", port=0):
+    def __init__(
+        self,
+        conn: object,
+        conn_type="jasmine",
+        host="127.0.0.1",
+        port=0,
+        direction=Literal["in", "out"],
+    ):
         self._conn = conn
         self._type = conn_type
         self._host = host
         self._port = port
+        self._direction = direction
 
     def sync(self, query: J) -> J:
         if isinstance(self._conn, JConn):
