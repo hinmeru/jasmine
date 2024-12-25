@@ -8,11 +8,18 @@ Jasmine is a spec of analytics programming language, inspired by q, rust, python
 
 Jasminum is a Rust + Python implementation of Jasmine engine powered by [polars](https://pola.rs/)
 
-## Future Plans
+## Future Roadmap
 
-- implement high-performance pure Rust engine
-- implement performance sensitive operations in Rust
-- create vscode plugin
+- [x] IPC with jasmine, duckdb, other databases etc.
+- [ ] running source code file
+- [ ] `import` function
+- [ ] jupyter kernel
+- [ ] node-jasmine
+- [ ] vscode plugin
+- [ ] all built-in functions
+- [ ] `pub-sub` feature
+- [ ] performance sensitive operations in Rust
+- [ ] high-performance Rust engine
 
 ## References
 
