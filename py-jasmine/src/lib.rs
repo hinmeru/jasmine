@@ -50,5 +50,11 @@ fn jasminum(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<AstSkip>()?;
     m.add_function(wrap_pyfunction!(parse_source_code, m)?)?;
     m.add_function(wrap_pyfunction!(print_trace, m)?)?;
+    m.add_function(wrap_pyfunction!(get_timezone, m)?)?;
     Ok(())
+}
+
+#[pyfunction]
+pub fn get_timezone() -> String {
+    iana_time_zone::get_timezone().unwrap_or("UTC".to_owned())
 }

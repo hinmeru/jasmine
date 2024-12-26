@@ -24,6 +24,7 @@ chrono = "0.4.38"
 chrono-tz = "0.10.0"
 indexmap = "2.4.0"
 numpy = "0.22.1"
+iana-time-zone = "0.1.61"
 
 [dependencies.polars]
 workspace = true

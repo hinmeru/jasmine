@@ -1,16 +1,19 @@
+import asyncio
 import zoneinfo
+from datetime import datetime
 from pathlib import Path
 from typing import Callable
 
 import polars as pl
 
-from . import cfg, df, expr, io, iterator, math, series, sql, string
+from . import cfg, debug, df, expr, io, iterator, math, series, sql, string
 from . import operator as op
-from .ast import print_trace
+from .ast import get_timezone, print_trace
 from .exceptions import JasmineEvalException
 from .j import J, JParted, JType
 from .j_fn import JFn
 from .j_handle import JHandle
+from .j_task import JTask
 from .temporal import tz
 
 
@@ -21,6 +24,8 @@ class Engine:
     sources: dict[int, (str, str)]
     source_paths: dict[str, int]
     builtins: dict[str, J]
+    timer_task: asyncio.Task
+    timer_tasks: dict[int, JTask]
 
     def __init__(self) -> None:
         self.globals = dict()
@@ -28,6 +33,7 @@ class Engine:
         self.sources = dict()
         self.builtins = dict()
         self.source_paths = dict()
+        self.timer_tasks = dict()
 
         # operator
         self.register_builtin("!=", op.not_equal)
@@ -216,6 +222,18 @@ class Engine:
         # sys
         self.register_builtin("handle", handle)
 
+        # timer
+        self.register_builtin("task", task)
+        self.register_builtin("schedule", schedule)
+        self.register_builtin("pause", pause)
+        self.register_builtin("unpause", unpause)
+        self.register_builtin("trigger", trigger)
+
+        # debug
+        self.register_builtin("show", debug.show)
+        self.register_builtin("assert_eq", debug.assert_eq)
+        self.register_builtin("assert", debug.assert_true)
+
         # vars
         self.builtins["timezone"] = J(
             pl.Series("timezone", sorted(list(zoneinfo.available_timezones())))
@@ -234,6 +252,8 @@ class Engine:
         )
 
     def get_trace(self, source_id: int, pos: int, msg: str) -> str:
+        if source_id == -1:
+            return msg
         source, path = self.sources.get(source_id)
         return print_trace(source, path, pos, msg)
 
@@ -342,6 +362,118 @@ class Engine:
                 else:
                     state -= 1
 
+    def set_timer_task(self, task: asyncio.Task) -> None:
+        self.timer_task = task
+
+    def list_timer_tasks(self) -> pl.DataFrame:
+        ids = []
+        functions = []
+        args = []
+        start_times = []
+        end_times = []
+        intervals = []
+        last_times = []
+        next_times = []
+        is_actives = []
+        descriptions = []
+        upd_times = []
+        for k, v in self.timer_tasks.items():
+            ids.append(k)
+            functions.append(
+                repr(v.function.data)
+                if v.function.j_type == JType.FN
+                else str(v.function)
+            )
+            args.append(str(v.args))
+            start_times.append(v.start_time)
+            end_times.append(v.end_time)
+            intervals.append(v.interval)
+            last_times.append(v.last_run)
+            next_times.append(v.next_run)
+            is_actives.append(v.is_active)
+            descriptions.append(v.description)
+            upd_times.append(v.upd_time)
+        timezone = get_timezone()
+        return pl.DataFrame(
+            [
+                pl.Series("id", ids, dtype=pl.Int64),
+                pl.Series("function", functions, dtype=pl.Utf8),
+                pl.Series("args", args, dtype=pl.Utf8),
+                pl.Series(
+                    "start_time",
+                    start_times,
+                    dtype=pl.Datetime("ms", time_zone=timezone),
+                ),
+                pl.Series(
+                    "end_time",
+                    end_times,
+                    dtype=pl.Datetime("ms", time_zone=timezone),
+                ),
+                pl.Series("interval", intervals, dtype=pl.Duration("ns")),
+                pl.Series(
+                    "last_run", last_times, dtype=pl.Datetime("ms", time_zone=timezone)
+                ),
+                pl.Series(
+                    "next_run", next_times, dtype=pl.Datetime("ms", time_zone=timezone)
+                ),
+                pl.Series("is_active", is_actives, dtype=pl.Boolean),
+                pl.Series("description", descriptions, dtype=pl.Utf8),
+                pl.Series(
+                    "upd_time", upd_times, dtype=pl.Datetime("ms", time_zone=timezone)
+                ),
+            ]
+        )
+
+    def schedule_job(
+        self,
+        function: J,
+        args: J,
+        start_time: datetime,
+        end_time: datetime | None,
+        interval: int,
+        description: str,
+    ) -> int:
+        if len(self.timer_tasks) == 0:
+            job_id = 0
+        else:
+            job_id = max(self.timer_tasks.keys()) + 1
+        j_task = JTask(
+            function, args.to_list(), start_time, end_time, interval, description
+        )
+        self.timer_tasks[job_id] = j_task
+        return job_id
+
+    def pause_task(self, task_id: int) -> None:
+        self.timer_tasks[task_id].is_active = False
+
+    def unpause_task(self, task_id: int) -> None:
+        self.timer_tasks[task_id].is_active = True
+
+    def trigger_task(self, task_id: int) -> None:
+        self.timer_tasks[task_id].next_run = datetime.now().astimezone()
+
 
 def handle() -> J:
+    pass
+
+
+def task() -> J:
+    pass
+
+
+def schedule(
+    function: J, args: J, start_time: J, end_time: J, interval: J, description: J
+) -> J:
+    pass
+
+
+def unpause(task_id: J) -> J:
+    pass
+
+
+def pause(task_id: J) -> J:
+    pass
+
+
+def trigger(task_id: J) -> J:
     pass

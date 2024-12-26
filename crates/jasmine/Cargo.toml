@@ -14,6 +14,7 @@ anyhow = "1.0.93"
 indexmap = "2.6.0"
 ndarray = "0.16.1"
 regex = "1.11.1"
+iana-time-zone = "0.1.61"
 
 [dependencies.polars]
 workspace = true
@@ -24,4 +25,5 @@ features = [
   "dtype-i16",
   "dtype-categorical",
   "ndarray",
+  "timezones",
 ]

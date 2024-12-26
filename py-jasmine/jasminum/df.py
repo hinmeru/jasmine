@@ -2,10 +2,15 @@ import polars as pl
 
 from .constant import PL_DTYPE_TO_J_TYPE
 from .exceptions import JasmineEvalException
-from .j import J
+from .j import J, JType
+from .util import validate_args
 
 
 def aj(on: J, df1: J, df2: J) -> J:
+    validate_args(
+        [on, df1, df2],
+        [[JType.STRING, JType.CAT, JType.SERIES], JType.DATAFRAME, JType.DATAFRAME],
+    )
     columns = on.to_strs()
     if len(columns) == 0:
         raise JasmineEvalException("requires at least one asof column for 'aj'")

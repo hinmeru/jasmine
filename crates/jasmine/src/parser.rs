@@ -1,7 +1,7 @@
 use crate::ast_node::AstNode;
 use crate::j::J;
-use chrono;
-use chrono::Datelike;
+use chrono::{self, TimeZone};
+use chrono::{Datelike, Local};
 use indexmap::IndexMap;
 use pest::error::{Error as PestError, ErrorVariant};
 use pest::Span;
@@ -623,7 +623,14 @@ fn parse_series(pair: Pair<Rule>) -> Result<AstNode, PestError<Rule>> {
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(AstNode::J(J::Series(
                 Series::new("".into(), datetimes)
-                    .cast(&PolarsDataType::Datetime(TimeUnit::Milliseconds, None))
+                    .cast(&PolarsDataType::Datetime(
+                        TimeUnit::Milliseconds,
+                        Some(
+                            iana_time_zone::get_timezone()
+                                .unwrap_or("UTC".to_owned())
+                                .into(),
+                        ),
+                    ))
                     .map_err(|e| raise_error(e.to_string(), span))?,
             )))
         }
@@ -642,7 +649,14 @@ fn parse_series(pair: Pair<Rule>) -> Result<AstNode, PestError<Rule>> {
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(AstNode::J(J::Series(
                 Series::new("".into(), timestamps)
-                    .cast(&PolarsDataType::Datetime(TimeUnit::Nanoseconds, None))
+                    .cast(&PolarsDataType::Datetime(
+                        TimeUnit::Nanoseconds,
+                        Some(
+                            iana_time_zone::get_timezone()
+                                .unwrap_or("UTC".to_owned())
+                                .into(),
+                        ),
+                    ))
                     .map_err(|e| raise_error(e.to_string(), span))?,
             )))
         }
@@ -765,7 +779,7 @@ fn parse_j(pair: Pair<Rule>) -> Result<AstNode, PestError<Rule>> {
                 .map_err(|e| raise_error(e.to_string(), pair.as_span()))
                 .map(|j| J::Datetime {
                     ms: j,
-                    timezone: "UTC".to_owned(),
+                    timezone: iana_time_zone::get_timezone().unwrap_or("UTC".to_owned()),
                 })?;
             Ok(AstNode::J(j))
         }
@@ -774,7 +788,7 @@ fn parse_j(pair: Pair<Rule>) -> Result<AstNode, PestError<Rule>> {
                 .map_err(|e| raise_error(e.to_string(), pair.as_span()))
                 .map(|j| J::Timestamp {
                     ns: j,
-                    timezone: "UTC".to_owned(),
+                    timezone: iana_time_zone::get_timezone().unwrap_or("UTC".to_owned()),
                 })?;
             Ok(AstNode::J(j))
         }
@@ -1038,7 +1052,7 @@ pub fn parse_datetime(dt: &str) -> Result<i64, String> {
         dt.to_owned()
     };
     match chrono::NaiveDateTime::parse_from_str(&datetime, "%Y-%m-%dT%H:%M:%S%.f") {
-        Ok(d) => Ok(d.and_utc().timestamp_millis()),
+        Ok(d) => Ok(Local.from_local_datetime(&d).unwrap().timestamp_millis()),
         Err(_) => Err(format!("Not a valid datetime, {}", dt)),
     }
 }
@@ -1050,7 +1064,11 @@ pub fn parse_timestamp(ts: &str) -> Result<i64, String> {
         ts.to_owned()
     };
     match chrono::NaiveDateTime::parse_from_str(&timestamp, "%Y-%m-%dD%H:%M:%S%.f") {
-        Ok(d) => Ok(d.and_utc().timestamp_nanos_opt().unwrap_or(0)),
+        Ok(d) => Ok(Local
+            .from_local_datetime(&d)
+            .unwrap()
+            .timestamp_nanos_opt()
+            .unwrap_or(0)),
         Err(_) => Err(format!("Not a valid timestamp, {}", ts)),
     }
 }

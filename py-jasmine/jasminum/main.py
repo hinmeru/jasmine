@@ -5,13 +5,14 @@ import os
 import platform
 import socket
 import traceback
+from datetime import datetime, timedelta
 
 import polars as pl
 from termcolor import cprint
 
 from .context import Context
 from .engine import Engine
-from .eval import eval_src, handle_ipc
+from .eval import eval_fn, eval_src, handle_ipc
 from .j_conn import JConn
 from .j_handle import JHandle
 
@@ -47,6 +48,15 @@ parser.add_argument(
     default=0,
     dest="port",
     help="port number to listen on",
+)
+
+parser.add_argument(
+    "-t",
+    "--timer",
+    type=float,
+    default=0,
+    dest="timer",
+    help="timer interval in seconds",
 )
 
 
@@ -91,6 +101,35 @@ async def handle_user_input(engine: Engine, is_debug=False):
             continue
 
 
+async def timer_task(engine: Engine, sleep_time_seconds: float):
+    while True:
+        await asyncio.sleep(sleep_time_seconds)
+        # print("execute timer jobs")
+        for task in engine.timer_tasks.values():
+            try:
+                if task.is_active and task.next_run < datetime.now().astimezone():
+                    eval_fn(
+                        task.function,
+                        engine,
+                        Context(dict()),
+                        -1,
+                        0,
+                        *task.args,
+                    )
+                    next_run = datetime.now().astimezone() + timedelta(
+                        microseconds=task.interval // 1000
+                    )
+                    if task.end_time is not None and next_run > task.end_time:
+                        task.is_active = False
+                        task.next_run = task.end_time
+                    else:
+                        task.next_run = next_run
+                    task.last_run = datetime.now().astimezone()
+            except Exception as e:
+                # print(traceback.format_exc())
+                cprint(f"error executing timer job: {e}", "red")
+
+
 async def async_main():
     engine = Engine()
     args = parser.parse_args()
@@ -123,6 +162,10 @@ async def async_main():
         HistoryConsole()
 
         readline.set_completer(engine.complete)
+
+    if args.timer > 0:
+        task = asyncio.create_task(timer_task(engine, args.timer))
+        engine.set_timer_task(task)
 
     task = asyncio.create_task(handle_user_input(engine, args.debug))
 

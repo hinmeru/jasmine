@@ -25,6 +25,7 @@ with contextlib.suppress(ImportError):
         AstUnaryOp,
         AstWhile,
         JObj,
+        get_timezone,
         parse_source_code,
         print_trace,
     )
@@ -126,4 +127,5 @@ all = [
     JObj,
     parse_source_code,
     print_trace,
+    get_timezone,
 ]

@@ -714,6 +714,7 @@ version = "0.3.3"
 dependencies = [
  "anyhow",
  "chrono",
+ "iana-time-zone",
  "indexmap",
  "ndarray",
  "pest",
@@ -1281,6 +1282,7 @@ dependencies = [
  "atoi_simd",
  "bytes",
  "chrono",
+ "chrono-tz",
  "fast-float2",
  "futures",
  "glob",
@@ -1316,6 +1318,7 @@ checksum = "19d97ebf73da016f4af4e5af8663523137e273e09d1a459e0cf87b5fdfd8f007"
 dependencies = [
  "ahash",
  "chrono",
+ "chrono-tz",
  "fallible-streaming-iterator",
  "hashbrown 0.15.2",
  "indexmap",
@@ -1669,6 +1672,7 @@ version = "0.3.3"
 dependencies = [
  "chrono",
  "chrono-tz",
+ "iana-time-zone",
  "indexmap",
  "jasmine",
  "numpy",

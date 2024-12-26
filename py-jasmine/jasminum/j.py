@@ -1,14 +1,14 @@
-from datetime import date
+from datetime import date, datetime, timezone
 from enum import Enum
 from pathlib import Path
 from typing import Literal
+from zoneinfo import ZoneInfo
 
 import polars as pl
 
 from .ast import JObj
 from .exceptions import JasmineEvalException
 from .j_fn import JFn
-from .util import date_to_num
 
 
 class JType(Enum):
@@ -395,6 +395,20 @@ class J:
         else:
             return False
 
+    def to_datetime(self) -> datetime:
+        if self.j_type == JType.DATETIME or self.j_type == JType.TIMESTAMP:
+            time_zone = self.data.tz()
+            second = (
+                self.data.as_py() / 1000
+                if self.j_type == JType.DATETIME
+                else self.data.as_py() / 1000_000_000
+            )
+            return datetime.fromtimestamp(second, tz=ZoneInfo(time_zone))
+        else:
+            raise JasmineEvalException(
+                "expect 'DATETIME|TIMESTAMP', but got %s" % self.j_type.name
+            )
+
     def to_list(self) -> list:
         if self.j_type == JType.SERIES:
             if isinstance(self.data.dtype, pl.Datetime):
@@ -402,37 +416,33 @@ class J:
                 if time_zone is None:
                     time_zone = "UTC"
                 time_unit = self.data.dtype.time_unit
-                if time_unit == "ms":
-                    raise JasmineEvalException("not support 'ms' unit datetime")
+                if time_unit == "us":
+                    raise JasmineEvalException("not support 'us' unit datetime")
                 datetimes = []
                 for n in list(self.data.cast(pl.Int64)):
                     datetimes.append(J(JObj(n, time_zone, time_unit)))
-                return J(datetimes)
+                return datetimes
             elif self.data.dtype == pl.Duration:
                 durations = []
                 for n in list(self.data.cast(pl.Int64)):
                     durations.append(J(n, JType.DURATION))
-                return J(durations)
+                return durations
             elif self.data.dtype == pl.Time:
                 times = []
                 for n in list(self.data.cast(pl.Int64)):
                     times.append(J(n, JType.TIME))
-                return J(durations)
+                return times
             else:
                 j_list = []
                 for n in list(self.data):
                     j_list.append(J(n))
-                return J(j_list)
+                return j_list
         elif self.j_type == JType.DICT:
-            return J(list(self.data.values()))
-        elif (
-            self.j_type == JType.LIST
-            or self.j_type == JType.DATAFRAME
-            or self.j_type == JType.MATRIX
-        ):
-            return self
+            return list(self.data.values())
+        elif self.j_type == JType.LIST:
+            return self.data
         else:
-            return J([self])
+            return [self]
 
     def to_str(self) -> str:
         if self.j_type == JType.STRING or self.j_type == JType.CAT:
@@ -521,3 +531,7 @@ class J:
                 return not self.data.is_empty()
             case _:
                 return False
+
+
+def date_to_num(dt: date) -> int:
+    return dt.year * 10000 + dt.month * 100 + dt.day

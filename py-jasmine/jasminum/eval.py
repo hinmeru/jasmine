@@ -36,11 +36,11 @@ from .ast import (
 from .context import Context
 from .engine import Engine
 from .exceptions import JasmineEvalException
-from .j import J, JType
+from .j import J, JType, date_to_num
 from .j_conn import JConn
 from .j_fn import JFn
 from .j_handle import JHandle
-from .util import date_to_num
+from .util import validate_args
 
 
 def import_path(path: str, engine: Engine):
@@ -247,10 +247,12 @@ def eval_ipc(j: J, engine: Engine) -> J:
             raise JasmineEvalException(
                 "not support '%s' as first item of list" % items[0].j_type.name
             )
-        return eval_fn(fn, engine, Context(dict()), 0, 0, *items[1:])
+        return eval_fn(fn, engine, Context(dict()), -1, 0, *items[1:])
 
 
-def eval_fn(j_fn: J, engine: Engine, ctx: Context, source_id: int, start: int, *args):
+def eval_fn(
+    j_fn: J, engine: Engine, ctx: Context, source_id: int, start: int, *args
+) -> J:
     try:
         if j_fn.j_type == JType.DATAFRAME:
             df = j_fn.data
@@ -316,6 +318,7 @@ def eval_fn(j_fn: J, engine: Engine, ctx: Context, source_id: int, start: int, *
                     missing_arg_names.remove(fn.arg_names[i])
 
             if missing_arg_num == 0 and fn.arg_num == len(args):
+                # built-in function with side effect
                 if isinstance(fn.fn, Callable):
                     if fn.fn.__name__ == "each":
                         arg1 = fn_args["arg1"]
@@ -376,7 +379,13 @@ def eval_fn(j_fn: J, engine: Engine, ctx: Context, source_id: int, start: int, *
                         url = fn_args["url"].to_str()
                         if url.startswith("jasmine://"):
                             url = url[10:]
-                            user, password, host, port = url.split(":")
+                            if url.count(":") == 3:
+                                user, password, host, port = url.split(":")
+                            else:
+                                raise JasmineEvalException(
+                                    "requires 'user:password:host:port' for 'hopen', got %s"
+                                    % url
+                                )
                             j_conn = JConn(host, int(port), user, password)
                             j_conn.connect()
                             j_handle = JHandle(
@@ -399,7 +408,7 @@ def eval_fn(j_fn: J, engine: Engine, ctx: Context, source_id: int, start: int, *
                                 import duckdb
 
                                 conn = duckdb.connect(url)
-                                j_handle = JHandle(conn, "duckdb", url, 0)
+                                j_handle = JHandle(conn, "duckdb", url, 0, "out")
                                 handle_id = engine.get_max_handle_id()
                                 engine.set_handle(handle_id, j_handle)
                                 return J(handle_id)
@@ -440,6 +449,56 @@ def eval_fn(j_fn: J, engine: Engine, ctx: Context, source_id: int, start: int, *
                         return J(None)
                     elif fn.fn.__name__ == "handle":
                         return J(engine.list_handles())
+                    elif fn.fn.__name__ == "task":
+                        return J(engine.list_timer_tasks())
+                    elif fn.fn.__name__ == "schedule":
+                        function = fn_args["function"]
+                        job_args = fn_args["args"]
+                        start_time = fn_args["start_time"]
+                        end_time = fn_args["end_time"]
+                        interval = fn_args["interval"]
+                        description = fn_args["description"]
+                        validate_args(
+                            [
+                                function,
+                                job_args,
+                                start_time,
+                                end_time,
+                                interval,
+                                description,
+                            ],
+                            [
+                                JType.FN,
+                                [JType.LIST, JType.SERIES],
+                                [JType.DATETIME, JType.TIMESTAMP],
+                                [JType.DATETIME, JType.TIMESTAMP, JType.NULL],
+                                JType.DURATION,
+                                JType.STRING,
+                            ],
+                        )
+                        end_time = (
+                            None
+                            if end_time.j_type == JType.NULL
+                            else end_time.to_datetime()
+                        )
+                        job_id = engine.schedule_job(
+                            function,
+                            job_args,
+                            start_time.to_datetime(),
+                            end_time,
+                            interval.int(),
+                            description.to_str(),
+                        )
+                        return J(job_id)
+                    elif fn.fn.__name__ == "unpause":
+                        engine.unpause_task(fn_args["task_id"].int())
+                        return J(None)
+                    elif fn.fn.__name__ == "pause":
+                        engine.pause_task(fn_args["task_id"].int())
+                        return J(None)
+                    elif fn.fn.__name__ == "trigger":
+                        engine.trigger_task(fn_args["task_id"].int())
+                        return J(None)
                     else:
                         return fn.fn(**fn_args)
                 else:
