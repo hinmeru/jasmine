@@ -107,7 +107,12 @@ async def timer_task(engine: Engine, sleep_time_seconds: float):
         # print("execute timer jobs")
         for task in engine.timer_tasks.values():
             try:
-                if task.is_active and task.next_run < datetime.now().astimezone():
+                now = datetime.now().astimezone()
+                if (
+                    task.is_active
+                    and task.next_run < now
+                    and (task.end_time is None or task.end_time > now)
+                ):
                     eval_fn(
                         task.function,
                         engine,
@@ -116,15 +121,14 @@ async def timer_task(engine: Engine, sleep_time_seconds: float):
                         0,
                         *task.args,
                     )
-                    next_run = datetime.now().astimezone() + timedelta(
-                        microseconds=task.interval // 1000
-                    )
+                    next_run = now + timedelta(microseconds=task.interval // 1000)
+
                     if task.end_time is not None and next_run > task.end_time:
                         task.is_active = False
                         task.next_run = task.end_time
                     else:
                         task.next_run = next_run
-                    task.last_run = datetime.now().astimezone()
+                    task.last_run = now
             except Exception as e:
                 # print(traceback.format_exc())
                 cprint(f"error executing timer job: {e}", "red")
