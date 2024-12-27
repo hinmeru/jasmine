@@ -1,5 +1,6 @@
 import asyncio
 import socket
+import traceback
 from copy import copy
 from typing import Callable
 
@@ -243,17 +244,22 @@ def eval_ipc(j: J, engine: Engine) -> J:
                 fn = engine.get_var(items[0].to_str())
             else:
                 raise JasmineEvalException("'%s' is not defined" % items[0].to_str())
+        elif items[0].j_type == JType.FN:
+            fn = items[0]
         else:
             raise JasmineEvalException(
                 "not support '%s' as first item of list" % items[0].j_type.name
             )
-        return eval_fn(fn, engine, Context(dict()), -1, 0, *items[1:])
+        return eval_fn(fn, engine, Context(dict()), 0, 0, *items[1:])
 
 
 def eval_fn(
     j_fn: J, engine: Engine, ctx: Context, source_id: int, start: int, *args
 ) -> J:
     try:
+        if j_fn.j_type == JType.FN and isinstance(j_fn.data.fn, str):
+            j_fn.data = eval_src(j_fn.data.fn, 0, engine, ctx).data
+
         if j_fn.j_type == JType.DATAFRAME:
             df = j_fn.data
             if len(args) == 1:
@@ -747,7 +753,11 @@ def eval_sql(
 
 
 async def handle_ipc(
-    engine: Engine, client: socket.socket, is_local: bool, handle_id: int
+    engine: Engine,
+    client: socket.socket,
+    is_local: bool,
+    handle_id: int,
+    is_debug=False,
 ):
     while True:
         try:
@@ -776,6 +786,8 @@ async def handle_ipc(
                 err_bytes = serde.serialize_err(str(e))
                 await asyncio.get_event_loop().sock_sendall(client, err_bytes)
         except Exception as e:
+            if is_debug:
+                traceback.print_exc()
             cprint(e, "red")
             break
     client.close()

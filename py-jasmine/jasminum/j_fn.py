@@ -4,7 +4,7 @@ from .ast import AstFn
 
 
 class JFn:
-    fn: Callable | AstFn | None
+    fn: Callable | AstFn | None | str
     args: dict
     arg_names: list[str]
     arg_num: int

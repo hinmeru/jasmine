@@ -104,6 +104,13 @@ def serialize(any: J, compress: bool) -> bytes:
             buf.seek(full_len)
             buf.truncate()
             return buf.getvalue()
+        case JType.FN:
+            fn_body = repr(any.data)
+            return (
+                any.j_type.value.to_bytes(1)
+                + len(fn_body).to_bytes(4, "little")
+                + fn_body.encode("utf-8")
+            )
 
 
 def write_len(msg_bytes: bytes, len: int, start: int):
@@ -204,6 +211,11 @@ def deserialize(any: bytes) -> J:
             return J(dict(zip(keys, values)), j_type)
         case JType.ERR:
             raise JasmineEvalException(data[4:].decode("utf-8"))
+        case JType.FN:
+            fn_body_length = int.from_bytes(data[4:8], "little")
+            return J(
+                JFn(data[4 : fn_body_length + 4].decode("utf-8"), dict(), [], 0, "")
+            )
         case _:
             raise JasmineEvalException(
                 f"unsupported j type for deserialization: {j_type}"
@@ -256,6 +268,8 @@ def estimate_size(any: J) -> int:
                 4 + len(key.encode("utf-8")) + estimate_size(value)
                 for key, value in any.data.items()
             )
+        case JType.FN:
+            return 5 + len(repr(any.data).encode("utf-8"))
         case _:
             raise JasmineEvalException(
                 f"unsupported j type for serialization: {any.j_type}"

@@ -101,7 +101,7 @@ async def handle_user_input(engine: Engine, is_debug=False):
             continue
 
 
-async def timer_task(engine: Engine, sleep_time_seconds: float):
+async def timer_task(engine: Engine, sleep_time_seconds: float, is_debug=False):
     while True:
         await asyncio.sleep(sleep_time_seconds)
         # print("execute timer jobs")
@@ -130,7 +130,8 @@ async def timer_task(engine: Engine, sleep_time_seconds: float):
                         task.next_run = next_run
                     task.last_run = now
             except Exception as e:
-                # print(traceback.format_exc())
+                if is_debug:
+                    traceback.print_exc()
                 cprint(f"error executing timer job: {e}", "red")
 
 
@@ -168,7 +169,7 @@ async def async_main():
         readline.set_completer(engine.complete)
 
     if args.timer > 0:
-        task = asyncio.create_task(timer_task(engine, args.timer))
+        task = asyncio.create_task(timer_task(engine, args.timer, args.debug))
         engine.set_timer_task(task)
 
     task = asyncio.create_task(handle_user_input(engine, args.debug))
@@ -204,7 +205,13 @@ async def async_main():
                         ),
                     )
                     asyncio.create_task(
-                        handle_ipc(engine, client, str(addr) == "127.0.0.1", handle_id)
+                        handle_ipc(
+                            engine,
+                            client,
+                            str(addr) == "127.0.0.1",
+                            handle_id,
+                            args.debug,
+                        )
                     )
                 except asyncio.exceptions.CancelledError:
                     break
