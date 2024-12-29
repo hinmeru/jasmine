@@ -190,6 +190,15 @@ class Engine:
 
         # df
         self.register_builtin("aj", df.aj)
+        self.register_builtin("cj", df.cj)
+        self.register_builtin("fj", df.fj)
+        self.register_builtin("lj", df.lj)
+        self.register_builtin("oj", df.oj)
+        self.register_builtin("semi", df.semi)
+        self.register_builtin("anti", df.anti)
+        self.register_builtin("extend", df.extend)
+        self.register_builtin("vstack", df.vstack)
+        self.register_builtin("hstack", df.hstack)
         self.register_builtin("schema", df.schema)
 
         # other

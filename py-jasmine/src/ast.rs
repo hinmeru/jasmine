@@ -174,7 +174,7 @@ impl Ast {
     pub fn index_assign(&self) -> PyResult<AstIndexAssign> {
         if let AstNode::IndexAssign { id, indices, exp } = &self.0 {
             Ok(AstIndexAssign {
-                id: id.to_string(),
+                id: Ast(*id.clone()),
                 indices: indices.into_iter().map(|n| Ast(n.clone())).collect(),
                 exp: Ast(*exp.clone()),
             })
@@ -484,7 +484,7 @@ pub struct AstAssign {
 
 #[pyclass(get_all)]
 pub struct AstIndexAssign {
-    id: String,
+    id: Ast,
     indices: Vec<Ast>,
     exp: Ast,
 }

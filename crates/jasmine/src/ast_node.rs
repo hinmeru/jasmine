@@ -25,7 +25,7 @@ pub enum AstNode {
         exp: Box<AstNode>,
     },
     IndexAssign {
-        id: String,
+        id: Box<AstNode>,
         indices: Vec<AstNode>,
         exp: Box<AstNode>,
     },

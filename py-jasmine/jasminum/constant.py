@@ -1,7 +1,5 @@
 import polars as pl
 
-from .j import J
-
 PL_DATA_TYPE = {
     "bool": pl.Boolean,
     "u8": pl.UInt8,

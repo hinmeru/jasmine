@@ -158,6 +158,7 @@ async def async_main():
     pid: {} \x1b[0m\n""".format(__version__, os.getpid())
     )
 
+    pl.enable_string_cache()
     # readline doesn't work for windows
     if platform.system() != "Windows":
         import readline

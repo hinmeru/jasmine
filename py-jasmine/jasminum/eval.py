@@ -200,6 +200,69 @@ def eval_node(node, engine: Engine, ctx: Context, is_in_fn=False, is_in_sql=Fals
                     else:
                         return res
         return J(None)
+    elif isinstance(node, AstDict):
+        keys = node.keys
+        values = [
+            eval_node(exp, engine, ctx, is_in_fn, is_in_sql) for exp in node.values
+        ]
+        return J(dict(zip(keys, values)))
+    elif isinstance(node, AstIndexAssign):
+        value = eval_node(node.exp, engine, ctx, is_in_fn, is_in_sql)
+        indices = [
+            eval_node(exp, engine, ctx, is_in_fn, is_in_sql) for exp in node.indices
+        ]
+        var = downcast_ast_node(node.id)
+        target = eval_node(var, engine, ctx, is_in_fn, is_in_sql)
+        var_name = var.name
+        if (
+            target.j_type == JType.SERIES
+            and len(indices) == 1
+            and (indices[0].j_type == JType.INT or indices[0].j_type == JType.SERIES)
+        ):
+            res = J(target.data.scatter(indices[0].data, value.to_series()))
+        elif (
+            target.j_type == JType.DATAFRAME
+            and len(indices) == 2
+            and (indices[0].j_type == JType.STRING or indices[0].j_type == JType.CAT)
+            and (indices[1].j_type == JType.INT or indices[1].j_type == JType.SERIES)
+        ):
+            res = J(
+                target.data.with_columns(
+                    pl.when(
+                        pl.int_range(pl.len(), dtype=pl.UInt32).is_in(
+                            indices[1].to_expr()
+                        )
+                    )
+                    .then(value.to_expr())
+                    .otherwise(pl.col(indices[0].to_str()))
+                )
+            )
+        elif (
+            target.j_type == JType.DICT
+            and len(indices) == 1
+            and (indices[0].j_type == JType.STRING or indices[0].j_type == JType.CAT)
+        ):
+            target.data[indices[0].to_str()] = value
+            return target
+        elif (
+            target.j_type == JType.LIST
+            and len(indices) == 1
+            and (indices[0].j_type == JType.INT or indices[0].j_type == JType.SERIES)
+        ):
+            for i in indices[0].to_list():
+                target.data[i] = value
+            return target
+        else:
+            raise JasmineEvalException(
+                "not support index assign for %s with %s" % (target, indices)
+            )
+
+        if ctx.has_var(var_name):
+            ctx.set_var(var_name, res)
+        else:
+            engine.set_var(var_name, res)
+        return res
+
     else:
         raise JasmineEvalException("not yet implemented - %s" % node)
 

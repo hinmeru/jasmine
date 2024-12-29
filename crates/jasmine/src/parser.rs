@@ -87,14 +87,18 @@ fn parse_exp(pair: Pair<Rule>, source_id: usize) -> Result<AstNode, PestError<Ru
             let id = pairs.next().unwrap();
             if id.as_rule() == Rule::FnCall {
                 let mut fn_call = id.into_inner();
-                let id = fn_call.next().unwrap().as_str();
+                let id = fn_call.next().unwrap();
                 let mut indices: Vec<AstNode> = Vec::with_capacity(fn_call.len() - 1);
                 for arg in fn_call {
                     indices.push(parse_exp(arg.into_inner().next().unwrap(), source_id)?)
                 }
                 let exp = parse_exp(pairs.next().unwrap(), source_id)?;
                 Ok(AstNode::IndexAssign {
-                    id: id.to_owned(),
+                    id: Box::new(AstNode::Id {
+                        name: id.as_str().to_owned(),
+                        start: id.as_span().start(),
+                        source_id,
+                    }),
                     indices,
                     exp: Box::new(exp),
                 })

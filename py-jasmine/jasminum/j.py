@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 import polars as pl
 
 from .ast import JObj
+from .constant import PL_DTYPE_TO_J_TYPE
 from .exceptions import JasmineEvalException
 from .j_fn import JFn
 
@@ -215,6 +216,10 @@ class J:
                 return f"{{{", ".join(self.data.keys())}}}"
             case JType.LIST:
                 return f"[{", ".join(map(lambda x: x.short_format(), self.data))}]"
+            case JType.SERIES:
+                return f"[{PL_DTYPE_TO_J_TYPE.get(self.data.dtype, 'unknown')} series]"
+            case JType.DATAFRAME:
+                return f"df{self.data.shape}[{', '.join(self.data.columns)}]"
             case _:
                 return str(self)
 
