@@ -35,7 +35,7 @@ The allowed query is different for different connection type:
 - jasmine
   - string
   - cat
-  - [string, arg1, arg2, ...]
+  - [string|cat|fn, arg1, arg2, ...]
 - duckdb
   - string
 
@@ -48,7 +48,7 @@ hasync(handle_id, query)
 - jasmine
   - string
   - cat
-  - [string, arg1, arg2, ...]
+  - [string|cat|fn, arg1, arg2, ...]
 
 ### handle
 
@@ -65,7 +65,6 @@ shape: (3, 4)
 │ ---       ┆ ---       ┆ ---       ┆ ---  │
 │ i64       ┆ str       ┆ str       ┆ i64  │
 ╞═══════════╪═══════════╪═══════════╪══════╡
-│ null      ┆ incoming  ┆ 127.0.0.1 ┆ 44848│
 │ 3         ┆ jasmine   ┆ localhost ┆ 1800 │
 │ 4         ┆ duckdb    ┆           ┆ 0    │
 └───────────┴───────────┴───────────┴──────┘
