@@ -19,6 +19,7 @@ from .j_handle import JHandle
 pl.Config.set_fmt_str_lengths(80)
 pl.Config.set_tbl_rows(20)
 pl.Config.set_tbl_cols(20)
+pl.Config.set_tbl_dataframe_shape_below(True)
 
 __version__ = importlib.metadata.version("jasminum")
 

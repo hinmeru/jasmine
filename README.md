@@ -12,13 +12,15 @@ Jasminum is a Rust + Python implementation of Jasmine engine powered by [polars]
 
 - [x] IPC with jasmine, duckdb, other databases etc.
 - [x] timer
-- [ ] running source code file
+- [ ] running source code file (with `-f` option, `.jsm` extension)
 - [ ] `import` function
 - [ ] jupyter kernel
 - [ ] node-jasmine
 - [ ] vscode plugin
 - [ ] all built-in functions
 - [ ] `pub-sub-replay` feature
+  - [ ] `pub-sub`
+  - [ ] `replay`, file1 byte size of each message, file2 byte of each message
 - [ ] performance sensitive operations in Rust
 - [ ] high-performance Rust engine
 

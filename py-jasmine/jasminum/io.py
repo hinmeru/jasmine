@@ -8,7 +8,7 @@ import polars as pl
 from .constant import PL_DATA_TYPE
 from .exceptions import JasmineEvalException
 from .j import J, JType
-from .j_conn import JConn
+from .util import validate_args
 
 
 # write partition df
@@ -63,7 +63,11 @@ def wpart(
 
 
 # read parquet
-def rparquet(source: J, n_rows: J, include_file_paths: J) -> J:
+def rparquet(source: J, n_rows: J, include_file_paths: J, rechunk: J) -> J:
+    validate_args(
+        [source, n_rows, include_file_paths, rechunk],
+        [JType.NULL, JType.NULL, JType.BOOL, JType.BOOL],
+    )
     if source.j_type == JType.CAT or source.j_type == JType.STRING:
         source_path = source.to_str()
     else:
@@ -71,13 +75,20 @@ def rparquet(source: J, n_rows: J, include_file_paths: J) -> J:
     path_column = None
     if include_file_paths.to_bool():
         path_column = "source_file"
-    if n_rows.j_type is None:
-        return J(pl.scan_parquet(source_path, include_file_paths=path_column).collect())
+    if n_rows.j_type == JType.NULL:
+        return J(
+            pl.scan_parquet(
+                source_path, include_file_paths=path_column, rechunk=rechunk.to_bool()
+            ).collect()
+        )
     else:
         n = n_rows.int()
         return J(
             pl.scan_parquet(
-                source_path, n_rows=n, include_file_paths=include_file_paths
+                source_path,
+                n_rows=n,
+                include_file_paths=path_column,
+                rechunk=rechunk.to_bool(),
             ).collect()
         )
 
@@ -99,10 +110,34 @@ def rcsv(
     source: J,
     has_header: J,
     sep: J,
+    skip_lines: J,
     ignore_errors: J,
     dtypes: J,
     include_file_paths: J,
+    rechunk: J,
 ) -> J:
+    validate_args(
+        [
+            source,
+            has_header,
+            sep,
+            skip_lines,
+            ignore_errors,
+            dtypes,
+            include_file_paths,
+            rechunk,
+        ],
+        [
+            JType.NULL,
+            JType.BOOLEAN,
+            JType.STRING,
+            JType.INT,
+            JType.BOOLEAN,
+            JType.NULL,
+            JType.BOOLEAN,
+            JType.BOOLEAN,
+        ],
+    )
     if source.j_type == JType.CAT or source.j_type == JType.STRING:
         source_path = source.to_str()
     else:
@@ -124,6 +159,8 @@ def rcsv(
         "ignore_errors": ignore_errors.to_bool(),
         "try_parse_dates": True,
         "include_file_paths": path_column,
+        "rechunk": rechunk.to_bool(),
+        "skip_lines": skip_lines.int(),
     }
     if len(dtype_dict) == 0:
         return J(pl.scan_csv(source_path, **args).collect())

@@ -138,6 +138,17 @@ def extract(string: J, pattern: J) -> J:
         )
 
 
+def parse_time(string: J, pattern: J) -> J:
+    if string.j_type == JType.EXPR:
+        return J(string.to_expr().str.to_time(pattern.to_str()))
+    else:
+        raise JasmineEvalException(
+            "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
+                "parse_time", string.j_type.name, pattern.j_type.name
+            )
+        )
+
+
 def parse_date(string: J, pattern: J) -> J:
     if string.j_type == JType.EXPR:
         return J(string.to_expr().str.to_date(pattern.to_str()))

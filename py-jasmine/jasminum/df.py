@@ -120,3 +120,15 @@ def schema(df: J) -> J:
     s = dataframe.schema
     schema_dict = {k: polars_dtype_to_j_type(v) for k, v in s.items()}
     return J(schema_dict)
+
+
+def glimpse(df: J) -> J:
+    return J(df.to_df().glimpse(max_items_per_column=10))
+
+
+def describe(df: J) -> J:
+    return J(df.to_df().describe())
+
+
+def rechunk(df: J) -> J:
+    return J(df.to_df().rechunk())

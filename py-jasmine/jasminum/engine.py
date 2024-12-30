@@ -157,6 +157,7 @@ class Engine:
         self.register_builtin("extract", string.extract)
         self.register_builtin("parse_date", string.parse_date)
         self.register_builtin("parse_datetime", string.parse_datetime)
+        self.register_builtin("parse_time", string.parse_time)
 
         # series
         self.register_builtin("asc", series.asc)
@@ -200,7 +201,9 @@ class Engine:
         self.register_builtin("vstack", df.vstack)
         self.register_builtin("hstack", df.hstack)
         self.register_builtin("schema", df.schema)
-
+        self.register_builtin("glimpse", df.glimpse)
+        self.register_builtin("describe", df.describe)
+        self.register_builtin("rechunk", df.rechunk)
         # other
         self.register_builtin("clip", math.clip)
         self.register_builtin("rquantile", math.rquantile)
