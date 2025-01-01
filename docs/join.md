@@ -1,8 +1,16 @@
-## 0.3.0
+# Join
 
+## Built-in functions
+
+### aj
+
+```
 aj(on, df1, df2)
+```
 
-start .. end
+- on: cats
+- df1: dataframe
+- df2: dataframe
 
 ```
 gdp0 = df[
@@ -18,23 +26,4 @@ pop0 = df[
 ];
 
 aj(`country`date, pop0, gdp0)
-
-t = df[
-  sym=100?`a`b`c,
-  date=2024-12-01 .. 2025-03-10,
-  qty=100?10,
-  price=100?1.0,
-];
-
-// Similar to xbar
-// https://docs.pola.rs/api/python/stable/reference/lazyframe/api/polars.LazyFrame.group_by_dynamic.html
-select sum qty dyn 10D, date, sym from t;
-
-// a new group by provided by polars
-// https://docs.pola.rs/api/python/stable/reference/lazyframe/api/polars.LazyFrame.rolling.html
-select sum qty rolling 10D, date, sym from t sort sym, date;
-
-select sum qty by sym, `month_start$date from t sort sym, date;
-
-select by sym from t;
 ```
