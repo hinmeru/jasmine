@@ -25,21 +25,7 @@ Exp = {
   | Term
 }
 
-Statements = { ((Exp | ReturnExp | RaiseExp) ~ ";")* ~ (Exp | ReturnExp | RaiseExp)? }
-
-OtherKeyword = {
-    "if"
-  | "exit"
-  | "while"
-  | "try"
-  | "catch"
-  | "return"
-  | "raise"
-  | "fn"
-  | "df"
-  | "true"
-  | "false"
-}
+Statements = { ((ReturnExp | RaiseExp | Exp) ~ ";")* ~ (ReturnExp | RaiseExp | Exp)? }
 
 ConditionExp = _{
     SqlExp
@@ -199,7 +185,7 @@ SortName        = @{ "-"? ~ SeriesName }
 SortNames       = _{ SortName ~ ("," ~ SortName)* ~ ","? }
 SortOp          =  { "sort" ~ SortNames }
 TakeOp          =  { "take" ~ Exp }
-SqlExp          =  { (SelectOp | UpdateOp | DeleteOp)? ~ GroupExp? ~ FromExp ~ FilterExp? ~ SortOp? ~ TakeOp? }
+SqlExp          =  { (SelectOp | UpdateOp | DeleteOp) ~ GroupExp? ~ FromExp ~ FilterExp? ~ SortOp? ~ TakeOp? }
 
 // -->SQL
 
@@ -232,12 +218,13 @@ Null      =  { "null" | "0n" }
 
 Series = { Scalar{2, } }
 
-Scalar = @{ "-"? ~ (ASCII_DIGIT ~ (ASCII_DIGIT | "." | "-" | "D" | "T" | "n" | "b" | ":" | "u" | "i" | "f" | "s" | "m" | "h")*) }
+Scalar = @{
+    (Datetime | Timestamp | Date | Time | Duration | Boolean | Null | Decimal ~ ("f32" | "f64")? | Integer ~ ("u8" | "u16" | "u32" | "u64" | "i8" | "i16" | "i32" | "i64" | "f32" | "f64" | "ns" | "s" | "m" | "h")?)
+}
 
 CJK        =  { HAN | HIRAGANA | KATAKANA | HANGUL | BOPOMOFO }
 Identifier = @{ (ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")*) | (CJK ~ (ASCII_ALPHANUMERIC | CJK | "_")*) }
-Keyword    =  { SqlKeyword | OtherKeyword }
-Id         = @{ (!Keyword ~ Identifier) | (Keyword ~ (ASCII_ALPHANUMERIC | "_")+) }
+Id         = @{ (!SqlKeyword ~ Identifier) | (SqlKeyword ~ (ASCII_ALPHANUMERIC | "_")+) }
 GlobalId   = @{ Identifier ~ ("." ~ Identifier)+ }
 
 Statement = _{ Exp | "" }

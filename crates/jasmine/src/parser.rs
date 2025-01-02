@@ -29,11 +29,20 @@ fn parse_binary_op(pair: Pair<Rule>, source_id: usize) -> Result<AstNode, PestEr
             start: pair.as_span().start(),
             source_id,
         }),
-        Rule::BinaryId => Ok(AstNode::Op {
-            name: pair.as_str()[1..].to_owned(),
-            start: pair.as_span().start(),
-            source_id,
-        }),
+        Rule::BinaryId => {
+            if is_keyword(&pair.as_str()[1..]) {
+                Err(raise_error(
+                    format!("Keyword cannot be used as identifier: {}", pair.as_str()),
+                    pair.as_span(),
+                ))
+            } else {
+                Ok(AstNode::Op {
+                    name: pair.as_str()[1..].to_owned(),
+                    start: pair.as_span().start(),
+                    source_id,
+                })
+            }
+        }
         _ => Err(raise_error(
             format!("Unexpected binary op/function: {}", pair.as_str()),
             pair.as_span(),
@@ -105,17 +114,33 @@ fn parse_exp(pair: Pair<Rule>, source_id: usize) -> Result<AstNode, PestError<Ru
             } else {
                 let exp = pairs.next().unwrap();
                 let exp = parse_exp(exp, source_id)?;
-                Ok(AstNode::Assign {
-                    id: id.as_str().to_owned(),
-                    exp: Box::new(exp),
+                if is_keyword(id.as_str()) {
+                    Err(raise_error(
+                        format!("Keyword cannot be used as identifier: {}", id.as_str()),
+                        id.as_span(),
+                    ))
+                } else {
+                    Ok(AstNode::Assign {
+                        id: id.as_str().to_owned(),
+                        exp: Box::new(exp),
+                    })
+                }
+            }
+        }
+        Rule::Id | Rule::BinaryOp | Rule::GlobalId => {
+            if is_keyword(pair.as_str()) {
+                Err(raise_error(
+                    format!("Keyword cannot be used as identifier: {}", pair.as_str()),
+                    pair.as_span(),
+                ))
+            } else {
+                Ok(AstNode::Id {
+                    name: pair.as_str().to_owned(),
+                    start: pair.as_span().start(),
+                    source_id,
                 })
             }
         }
-        Rule::Id | Rule::BinaryOp | Rule::GlobalId => Ok(AstNode::Id {
-            name: pair.as_str().to_owned(),
-            start: pair.as_span().start(),
-            source_id,
-        }),
         Rule::Fn => {
             let fn_body = pair.as_str();
             let fn_span = pair.as_span();
@@ -1074,6 +1099,20 @@ pub fn parse_timestamp(ts: &str) -> Result<i64, String> {
             .timestamp_nanos_opt()
             .unwrap_or(0)),
         Err(_) => Err(format!("Not a valid timestamp, {}", ts)),
+    }
+}
+
+pub fn is_keyword(s: &str) -> bool {
+    if vec![
+        "select", "update", "delete", "group", "by", "from", "where", "order", "take", "sort",
+        "if", "exit", "while", "try", "catch", "return", "raise", "fn", "df", "true", "false",
+        "null",
+    ]
+    .contains(&s)
+    {
+        true
+    } else {
+        false
     }
 }
 

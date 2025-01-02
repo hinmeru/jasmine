@@ -60,6 +60,22 @@ parser.add_argument(
     help="timer interval in seconds",
 )
 
+parser.add_argument(
+    "--lazy",
+    action="store_true",
+    default=False,
+    dest="lazy",
+    help="enable lazy evaluation mode",
+)
+
+parser.add_argument(
+    "-l",
+    "--log",
+    type=str,
+    dest="log",
+    help="path to the log file",
+)
+
 
 async def get_user_input(prompt: str) -> str:
     loop = asyncio.get_event_loop()
