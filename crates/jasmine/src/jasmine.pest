@@ -1,8 +1,37 @@
-String = @{ "\"" ~ ("\\\"" | "\\r" | "\\n" | "\\t" | (!"\"" ~ ANY))* ~ "\"" }
+DoubleQuoteChar = _{
+    "\\" ~ EscapeSequence
+  | LineContinuation
+  | !"\"" ~ CharLiteral
+}
+
+EscapeSequence         = _{
+    CharEscapeSequence
+  | NulEscapeSequence
+  | "x" ~ HexEscapeSequence
+  | "u" ~ UnicodeEscapeSequence
+}
+SingleEscapeChar       = _{ "'" | "\"" | "\\" | "b" | "f" | "n" | "r" | "t" | "v" }
+NonEscapeChar          = _{ !SingleEscapeChar ~ ANY }
+CharEscapeSequence     = @{ SingleEscapeChar | NonEscapeChar }
+NulEscapeSequence      = @{ "0" }
+HexEscapeSequence      = @{ ASCII_HEX_DIGIT{2} }
+LineContinuation       = @{ "\\" ~ LineTerminatorSequence }
+LineTerminator         = _{ "\u{000A}" | "\u{000D}" | "\u{2028}" | "\u{2029}" }
+LineTerminatorSequence = _{ "\u{000D}" ~ "\u{000A}" | LineTerminator }
+CharLiteral            = @{ !("\\" | "\"" | LineTerminatorSequence) ~ ANY }
+UnicodeEscapeSequence  = @{ ASCII_HEX_DIGIT{4} }
+
+String = @{ "\"" ~ DoubleQuoteChar* ~ "\"" }
+
+SingleQuoteChar = _{
+    "\\" ~ EscapeSequence
+  | LineContinuation
+  | !"'" ~ CharLiteral
+}
 
 CatChar = _{ ASCII_ALPHANUMERIC | "_" | "." | "/" | "\\" | ":" | CJK }
 Cat     = @{ "`" ~ CatChar* }
-CatAlt  = @{ "'" ~ (!"'" ~ ANY)* ~ "'" }
+CatAlt  = @{ "'" ~ SingleQuoteChar* ~ "'" }
 Cats    = @{ ("`" ~ CatChar*) ~ ("`" ~ CatChar*)+ }
 
 WHITESPACE = _{ " " | "\t" | NEWLINE }
@@ -211,10 +240,21 @@ Time      = @{ ASCII_DIGIT{2} ~ ":" ~ ASCII_DIGIT{2} ~ ":" ~ ASCII_DIGIT{2} ~ ("
 Datetime  = @{ Date ~ "T" ~ Time? }
 Timestamp = @{ Date ~ "D" ~ Time? }
 Duration  = @{ (Integer ~ "D" ~ Time?) | (Integer ~ ("ns" | "s" | "m" | "h")) }
-Integer   = @{ "-"? ~ ASCII_DIGIT+ }
-Decimal   = @{ "-"? ~ (ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT* | "inf") }
-Boolean   =  { ("true" | "false" | "0b" | "1b") }
-Null      =  { "null" | "0n" }
+Integer   = @{ "-"? ~ DecimalIntegerLiteral+ }
+
+Decimal = @{ "-"? ~ (DecimalLiteral | "inf") }
+
+DecimalIntegerLiteral = _{ "0" | ASCII_NONZERO_DIGIT ~ ASCII_DIGIT* }
+ExponentPart          = _{ ^"e" ~ ("+" | "-")? ~ ASCII_DIGIT+ }
+
+DecimalLiteral = _{
+    DecimalIntegerLiteral ~ "." ~ ASCII_DIGIT* ~ ExponentPart?
+  | "." ~ ASCII_DIGIT+ ~ ExponentPart?
+  | DecimalIntegerLiteral ~ ExponentPart
+}
+
+Boolean = { ("true" | "false" | "0b" | "1b") }
+Null    = { "null" | "0n" }
 
 Series = { Scalar{2, } }
 
