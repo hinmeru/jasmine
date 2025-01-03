@@ -612,10 +612,16 @@ def eval_sql(
         if j.j_type == JType.DATAFRAME:
             df = j.data.lazy()
             if len(sql.filters) > 0:
-                for node in sql.filters:
-                    df = df.filter(
-                        eval_node(node, engine, ctx, is_in_fn, True).to_expr()
-                    )
+                if sql.op == "select" or sql.op == "update":
+                    for node in sql.filters:
+                        df = df.filter(
+                            eval_node(node, engine, ctx, is_in_fn, True).to_expr()
+                        )
+                elif sql.op == "delete":
+                    for node in sql.filters:
+                        df = df.filter(
+                            ~eval_node(node, engine, ctx, is_in_fn, True).to_expr()
+                        )
         elif j.j_type == JType.PARTED:
             missing_part_err = JasmineEvalException(
                 "dataframe partitioned by %s requires its partitioned unit condition('==', 'in' or 'between') as its first filter clause"

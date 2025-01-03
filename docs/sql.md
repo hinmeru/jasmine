@@ -19,7 +19,7 @@
 
 #### by
 
-```
+```jasmine
 t = df[
   sym=100?`a`b`c,
   date=2024-12-01 .. 2025-03-10,
@@ -67,8 +67,35 @@ select sum qty rolling 10D, date, sym from t sort sym, date;
 
 ## Functional Query
 
+```jasmine
+sel(dataframe, wheres, groups, columns)
+upd(dataframe, wheres, groups, columns)
+del(dataframe, wheres, columns)
 ```
-sel(dataframe, exprs, exprs, exprs)
-upd(dataframe, exprs, exprs, exprs)
-del(dataframe, exprs, exprs)
+
+```jasmine
+t = df[
+  sym=100?`a`b`c,
+  date=2024-12-01 .. 2025-03-10,
+  qty=100?10,
+  price=100?1.0,
+];
+
+// sum by start of month, hence sum of each month
+sel(t, null, [col(`sym), `month_start$col(`date)], [sum col(`qty)]);
+
+// last record in each group
+sel(t, null, [col(`sym)], null);
+
+// delete qty column
+del(t, null, [col(`qty)]);
+
+// delete sym==`a`
+del(t, [col(`sym)==`a], null);
+
+// update qty to 100
+upd(t, null, null, [lit(100) ~alias `qty]);
+
+// filter sym==`a and update qty to 100
+upd(t, [col(`sym)==`a], null, [lit(100) ~alias `qty]);
 ```

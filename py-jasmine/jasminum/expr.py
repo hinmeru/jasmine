@@ -18,3 +18,7 @@ def lit(value: J) -> J:
         return J(value.to_expr())
     except Exception:
         raise JasmineEvalException(f"failed to apply 'lit': {value}")
+
+
+def alias(expr: J, alias: J) -> J:
+    return J(expr.to_expr().alias(alias.to_str()))

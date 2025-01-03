@@ -132,3 +132,109 @@ def describe(df: J) -> J:
 
 def rechunk(df: J) -> J:
     return J(df.to_df().rechunk())
+
+
+def rename(columns: J, df: J) -> J:
+    validate_args(
+        [columns, df],
+        [[JType.STRING, JType.CAT, JType.SERIES, JType.DICT], JType.DATAFRAME],
+    )
+    data = df.to_df()
+    rename_dict = {}
+    if (
+        columns.j_type == JType.SERIES
+        or columns.j_type == JType.CAT
+        or columns.j_type == JType.STRING
+    ):
+        new_columns = columns.to_strs()
+        for i, col in enumerate(new_columns):
+            rename_dict[data.columns[i]] = col
+    elif columns.j_type == JType.DICT:
+        rename_dict = {k: v.to_str() for k, v in columns.data.items()}
+    else:
+        raise JasmineEvalException(
+            "expect 'STRING|CAT|STRINGS|CATS', but got %s" % columns.j_type.name
+        )
+    return J(data.rename(rename_dict))
+
+
+def sel(df: J, wheres: J, groups: J, columns: J) -> J:
+    validate_args(
+        [df, wheres, groups, columns],
+        [
+            JType.DATAFRAME,
+            [JType.LIST, JType.EXPR, JType.NULL],
+            [JType.LIST, JType.EXPR, JType.NULL],
+            [JType.LIST, JType.EXPR, JType.NULL],
+        ],
+    )
+    data = df.to_df().lazy()
+    if wheres.j_type != JType.NULL:
+        data = data.filter(wheres.to_exprs())
+
+    if groups.j_type != JType.NULL and columns.j_type != JType.NULL:
+        data = data.group_by(groups.to_exprs()).agg(columns.to_exprs())
+    elif groups.j_type != JType.NULL and columns.j_type == JType.NULL:
+        data = data.group_by(groups.to_exprs()).agg(pl.all().last())
+    elif groups.j_type == JType.NULL and columns.j_type != JType.NULL:
+        data = data.select(columns.to_exprs())
+    else:
+        return J(df)
+
+    return J(data.collect())
+
+
+def del_(df: J, wheres: J, columns: J) -> J:
+    validate_args(
+        [df, wheres, columns],
+        [
+            JType.DATAFRAME,
+            [JType.LIST, JType.EXPR, JType.NULL],
+            [JType.LIST, JType.EXPR, JType.NULL],
+        ],
+    )
+    data = df.to_df().lazy()
+
+    if wheres.j_type != JType.NULL and columns.j_type != JType.NULL:
+        raise JasmineEvalException(
+            "not supported 'where' and 'columns' at the same time for 'delete'"
+        )
+
+    if wheres.j_type != JType.NULL:
+        for expr in wheres.to_exprs():
+            data = data.filter(~expr)
+
+    if columns.j_type != JType.NULL:
+        data = data.drop(columns.to_exprs())
+
+    return J(data.collect())
+
+
+def upd(df: J, wheres: J, groups: J, columns: J) -> J:
+    validate_args(
+        [df, wheres, groups, columns],
+        [
+            JType.DATAFRAME,
+            [JType.LIST, JType.EXPR, JType.NULL],
+            [JType.LIST, JType.EXPR, JType.NULL],
+            [JType.LIST, JType.EXPR, JType.NULL],
+        ],
+    )
+    data = df.to_df().lazy()
+
+    if columns.j_type == JType.NULL:
+        raise JasmineEvalException(
+            "requires at least one column operation for 'update'"
+        )
+
+    if wheres.j_type != JType.NULL:
+        data = data.filter(wheres.to_exprs())
+
+    if groups.j_type != JType.NULL:
+        group_exprs = groups.to_exprs()
+        for expr in columns.to_exprs():
+            data = data.with_columns(expr.over(group_exprs))
+    else:
+        data = data.with_columns(columns.to_exprs())
+
+    return J(data.collect())

@@ -67,6 +67,7 @@ class Engine:
         self.register_builtin("col", expr.col)
         self.register_builtin("lit", expr.lit)
         self.register_builtin("selector", expr.selector)
+        self.register_builtin("alias", expr.alias)
 
         # math
         self.register_builtin("abs", math.abs)
@@ -192,8 +193,9 @@ class Engine:
         # df
         self.register_builtin("aj", df.aj)
         self.register_builtin("cj", df.cj)
-        self.register_builtin("fj", df.fj)
+        self.register_builtin("ij", df.ij)
         self.register_builtin("lj", df.lj)
+        self.register_builtin("fj", df.fj)
         self.register_builtin("oj", df.oj)
         self.register_builtin("semi", df.semi)
         self.register_builtin("anti", df.anti)
@@ -204,6 +206,11 @@ class Engine:
         self.register_builtin("glimpse", df.glimpse)
         self.register_builtin("describe", df.describe)
         self.register_builtin("rechunk", df.rechunk)
+        self.register_builtin("rename", df.rename)
+        self.register_builtin("sel", df.sel)
+        self.register_builtin("del", df.del_)
+        self.register_builtin("upd", df.upd)
+
         # other
         self.register_builtin("clip", math.clip)
         self.register_builtin("rquantile", math.rquantile)
