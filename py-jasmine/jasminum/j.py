@@ -327,16 +327,16 @@ class J:
             case _:
                 return 1
 
-    def with_timezone(self, timezone: str):
-        return J(self.data.with_timezone(timezone), self.j_type)
+    def with_timezone(self, tz: str):
+        return J(self.data.with_timezone(tz), self.j_type)
 
     @classmethod
-    def from_nanos(cls, ns: int, timezone: str):
-        return J(JObj(ns, timezone, "ns"))
+    def from_nanos(cls, ns: int, tz: str):
+        return J(JObj(ns, tz, "ns"))
 
     @classmethod
-    def from_millis(cls, ms: int, timezone: str):
-        return J(JObj(ms, timezone, "ms"))
+    def from_millis(cls, ms: int, tz: str):
+        return J(JObj(ms, tz, "ms"))
 
     def tz(self) -> str:
         return self.data.tz()

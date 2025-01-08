@@ -6,7 +6,7 @@ from typing import Callable
 
 import polars as pl
 
-from . import cfg, debug, df, expr, io, iterator, math, series, sql, string
+from . import cfg, debug, df, expr, io, iterator, math, series, sql, string, temporal
 from . import operator as op
 from .ast import get_timezone, print_trace
 from .exceptions import JasmineEvalException
@@ -14,7 +14,6 @@ from .j import J, JParted, JType
 from .j_fn import JFn
 from .j_handle import JHandle
 from .j_task import JTask
-from .temporal import tz
 
 
 class Engine:
@@ -22,6 +21,7 @@ class Engine:
     handles: dict[int, JHandle]
     # source_id -> (source_code, filepath)
     sources: dict[int, (str, str)]
+    # filepath -> source_id
     source_paths: dict[str, int]
     builtins: dict[str, J]
     timer_task: asyncio.Task
@@ -119,7 +119,8 @@ class Engine:
         self.register_builtin("var1", math.var1)
 
         # binary
-        self.register_builtin("tz", tz)
+        self.register_builtin("tz.convert", temporal.convert_tz)
+        self.register_builtin("tz.replace", temporal.replace_tz)
         self.register_builtin("corr0", math.corr0)
         self.register_builtin("corr1", math.corr1)
         self.register_builtin("cov0", math.cov0)
@@ -235,8 +236,8 @@ class Engine:
         self.register_builtin("each", iterator.each)
 
         # config
-        self.register_builtin("cfg_strlen", cfg.strlen)
-        self.register_builtin("cfg_tbl", cfg.tbl)
+        self.register_builtin("cfg.strlen", cfg.strlen)
+        self.register_builtin("cfg.tbl", cfg.tbl)
 
         # sys
         self.register_builtin("handle", handle)
@@ -338,6 +339,12 @@ class Engine:
         self.sources[source_id] = source
         filepath = source[0]
         self.source_paths[filepath] = source_id
+
+    def get_max_source_id(self) -> int:
+        if len(self.sources) == 0:
+            return 1
+        else:
+            return max(self.sources.keys()) + 1
 
     def has_source(self, source_id: int) -> bool:
         return source_id in self.sources

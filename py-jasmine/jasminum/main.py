@@ -4,6 +4,7 @@ import importlib.metadata
 import os
 import platform
 import socket
+import time
 import traceback
 from datetime import datetime, timedelta
 
@@ -12,7 +13,7 @@ from termcolor import cprint
 
 from .context import Context
 from .engine import Engine
-from .eval import eval_fn, eval_src, handle_ipc
+from .eval import eval_file, eval_fn, eval_src, handle_ipc
 from .j_conn import JConn
 from .j_handle import JHandle
 
@@ -107,7 +108,10 @@ async def handle_user_input(engine: Engine, is_debug=False):
             src = "\n".join(src)
             engine.sources[0] = (src, "")
             try:
+                start = time.time()
                 res = eval_src(src, 0, engine, Context(dict()))
+                end = time.time()
+                cprint(f"time: {(end - start) * 1000:.2f}ms", "light_green")
                 cprint(res, "light_green")
             except Exception as e:
                 if is_debug:
@@ -185,6 +189,9 @@ async def async_main():
         HistoryConsole()
 
         readline.set_completer(engine.complete)
+
+    if args.file:
+        eval_file(args.file, engine)
 
     if args.timer > 0:
         task = asyncio.create_task(timer_task(engine, args.timer, args.debug))

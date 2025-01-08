@@ -59,6 +59,14 @@ def eval_src(source_code: str, source_id: int, engine: Engine, ctx: Context) -> 
     return res
 
 
+def eval_file(file: str, engine: Engine) -> J:
+    with open(file, "r") as f:
+        source_code = f.read()
+    source_id = engine.get_max_source_id()
+    engine.set_source(source_id, (file, source_code))
+    return eval_src(source_code, source_id, engine, Context(dict()))
+
+
 def eval_node(node, engine: Engine, ctx: Context, is_in_fn=False, is_in_sql=False) -> J:
     if isinstance(node, Ast):
         node = downcast_ast_node(node)

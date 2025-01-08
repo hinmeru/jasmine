@@ -78,7 +78,10 @@ def rparquet(source: J, n_rows: J, include_file_paths: J, rechunk: J) -> J:
     if n_rows.j_type == JType.NULL:
         return J(
             pl.scan_parquet(
-                source_path, include_file_paths=path_column, rechunk=rechunk.to_bool()
+                source_path,
+                include_file_paths=path_column,
+                rechunk=rechunk.to_bool(),
+                cache=False,
             ).collect()
         )
     else:
@@ -89,6 +92,7 @@ def rparquet(source: J, n_rows: J, include_file_paths: J, rechunk: J) -> J:
                 n_rows=n,
                 include_file_paths=path_column,
                 rechunk=rechunk.to_bool(),
+                cache=False,
             ).collect()
         )
 
@@ -161,6 +165,8 @@ def rcsv(
         "include_file_paths": path_column,
         "rechunk": rechunk.to_bool(),
         "skip_lines": skip_lines.int(),
+        "truncate_ragged_lines": True,
+        "cache": False,
     }
     if len(dtype_dict) == 0:
         return J(pl.scan_csv(source_path, **args).collect())

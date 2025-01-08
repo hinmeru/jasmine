@@ -11,15 +11,15 @@ def validate_args(args: list[J], arg_types: list[JType]) -> None:
                 "invalid %s argument type: %s, expected: %s"
                 % (
                     i + 1,
-                    arg.j_type,
+                    arg.j_type.name,
                     "|".join([a.name for a in arg_types[i]]),
                 )
             )
         elif isinstance(arg_types[i], JType):
-            if arg.j_type == JType.NULL:
+            if arg_types[i] == JType.NULL:
                 continue
             elif arg.j_type != arg_types[i]:
                 raise JasmineEvalException(
                     "invalid %s argument type: %s, expected: %s"
-                    % (i + 1, arg.j_type, arg_types[i])
+                    % (i + 1, arg.j_type.name, arg_types[i].name)
                 )
