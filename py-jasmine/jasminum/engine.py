@@ -118,9 +118,13 @@ class Engine:
         self.register_builtin("var0", math.var0)
         self.register_builtin("var1", math.var1)
 
-        # binary
+        # temporal
         self.register_builtin("tz.convert", temporal.convert_tz)
         self.register_builtin("tz.replace", temporal.replace_tz)
+        self.register_builtin("dt.now", temporal.now)
+        self.register_builtin("dt.today", temporal.today)
+
+        # binary
         self.register_builtin("corr0", math.corr0)
         self.register_builtin("corr1", math.corr1)
         self.register_builtin("cov0", math.cov0)

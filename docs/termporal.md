@@ -19,3 +19,11 @@ update underlying timestamp
 df0 = df[time = [2024-12-10T10:00:00]]
 update tokyo_time = time ~tz.replace `Asia/Tokyo from df0
 ```
+
+- `dt.now()`
+
+return current timestamp in local timezone
+
+- `dt.today()`
+
+return current date

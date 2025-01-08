@@ -1,5 +1,9 @@
+import time
+from datetime import date
+
 import polars as pl
 
+from .ast import get_timezone
 from .j import J, JType
 
 
@@ -27,3 +31,14 @@ def replace_tz(datetime: J, tz: J) -> J:
         return J(datetime.data.dt.replace_time_zone(tzinfo))
     elif datetime.j_type == JType.EXPR:
         return J(datetime.to_expr().dt.replace_time_zone(tzinfo))
+
+
+def now() -> J:
+    tz = get_timezone()
+    # utc nanos
+    ns = int(time.time() * 1000000000)
+    return J.from_nanos(ns, tz)
+
+
+def today() -> J:
+    return J(date.today())
