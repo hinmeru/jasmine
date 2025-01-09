@@ -1,5 +1,14 @@
 # Change Log
 
+## 0.3.5
+
+### 🚀 Features
+
+- Timezone offset functions: `tz.offset()`, `tz.utcoffset()`, `tz.dstoffset()`
+- `filter` function for Series
+- `like` function for Series and String
+- `@` operator for Series
+
 ## 0.3.4
 
 ### 🚀 Features
