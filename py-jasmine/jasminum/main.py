@@ -111,7 +111,7 @@ async def handle_user_input(engine: Engine, is_debug=False):
                 start = time.time()
                 res = eval_src(src, 0, engine, Context(dict()))
                 end = time.time()
-                cprint(f"time: {(end - start) * 1000:.2f}ms", "light_green")
+                cprint(f"{(end - start) * 1000:.2f}ms", "grey")
                 cprint(res, "light_green")
             except Exception as e:
                 if is_debug:

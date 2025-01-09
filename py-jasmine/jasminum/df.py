@@ -48,12 +48,12 @@ def fj(on: J, df1: J, df2: J) -> J:
     return J(d)
 
 
-def oj(on: J, df1: J, df2: J) -> J:
+def oj(df1: J, df2: J) -> J:
     validate_args(
-        [on, df1, df2],
-        [[JType.STRING, JType.CAT, JType.SERIES], JType.DATAFRAME, JType.DATAFRAME],
+        [df1, df2],
+        [JType.DATAFRAME, JType.DATAFRAME],
     )
-    d = df1.to_df().join(df2.to_df(), on=on.to_strs(), how="outer", coalesce=True)
+    d = df1.to_df().join(df2.to_df(), how="outer", coalesce=True)
     return J(d)
 
 

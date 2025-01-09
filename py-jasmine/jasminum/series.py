@@ -286,3 +286,16 @@ def union(arg1: J, arg2: J) -> J:
                 "union", arg1.j_type.name, arg2.j_type.name
             )
         )
+
+
+def filter(arg: J, condition: J) -> J:
+    if arg.j_type == JType.EXPR or condition.j_type == JType.EXPR:
+        return J(arg.to_expr().filter(condition.to_expr()))
+    elif arg.j_type == JType.SERIES and condition.j_type == JType.SERIES:
+        return J(arg.data.filter(condition.data))
+    else:
+        raise JasmineEvalException(
+            "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
+                "filter", arg.j_type.name, condition.j_type.name
+            )
+        )

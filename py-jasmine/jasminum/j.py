@@ -367,7 +367,16 @@ class J:
 
     def to_expr(self) -> pl.Expr:
         match self.j_type:
-            case JType.NULL | JType.INT | JType.DATE | JType.FLOAT | JType.SERIES:
+            case (
+                JType.NULL
+                | JType.INT
+                | JType.DATE
+                | JType.FLOAT
+                | JType.SERIES
+                | JType.STRING
+                | JType.CAT
+                | JType.BOOLEAN
+            ):
                 return pl.lit(self.data)
             case JType.TIME:
                 return pl.lit(pl.Series("", [self.data], pl.Time))
@@ -375,14 +384,12 @@ class J:
                 return pl.lit(self.data.as_series())
             case JType.DURATION:
                 return pl.lit(pl.Series("", [self.data], pl.Duration("ns")))
-            case JType.STRING | JType.CAT:
-                return pl.lit(self.data)
             case JType.EXPR:
                 return self.data
             case _:
                 # MATRIX | LIST | DICT | DATAFRAME | ERR | FN | MISSING | RETURN | PARTED
                 raise JasmineEvalException(
-                    "not supported j type for sql fn: %s" % self.j_type.name
+                    "not supported j type as sql expr: %s" % self.j_type.name
                 )
 
     def to_exprs(self) -> list[pl.Expr]:

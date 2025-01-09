@@ -66,7 +66,7 @@ def wpart(
 def rparquet(source: J, n_rows: J, include_file_paths: J, rechunk: J) -> J:
     validate_args(
         [source, n_rows, include_file_paths, rechunk],
-        [JType.NULL, JType.NULL, JType.BOOL, JType.BOOL],
+        [JType.NULL, JType.NULL, JType.BOOLEAN, JType.BOOLEAN],
     )
     if source.j_type == JType.CAT or source.j_type == JType.STRING:
         source_path = source.to_str()
@@ -148,7 +148,7 @@ def rcsv(
         source_path = source.to_strs()
     dtype_dict = {}
     if dtypes.j_type == JType.DICT:
-        dtype_dict = dtypes.data
+        dtype_dict = dtypes.data.copy()
         for k, v in dtype_dict.items():
             dtype = v.to_str()
             if dtype not in PL_DATA_TYPE:

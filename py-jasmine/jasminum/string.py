@@ -71,6 +71,8 @@ def uppercase(arg: J) -> J:
 def like(strings: J, pattern: J) -> J:
     if strings.j_type == JType.EXPR or pattern.j_type == JType.EXPR:
         return J(strings.to_expr().str.contains(pattern.to_expr(), strict=True))
+    elif strings.j_type == JType.SERIES and pattern.j_type == JType.STRING:
+        return J(strings.data.str.contains(pattern.data, strict=True))
     else:
         raise JasmineEvalException(
             "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(

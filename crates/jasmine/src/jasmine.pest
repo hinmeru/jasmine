@@ -204,7 +204,7 @@ SeriesNames     = _{ (SeriesName ~ ",")* ~ SeriesName? }
 RenameSeriesExp =  { SeriesName ~ "=" ~ (SqlOpExp | BracketSqlExp) }
 SeriesExp       =  { RenameSeriesExp | SqlOpExp | BracketSqlExp }
 SeriesExps      = _{ (SeriesExp ~ ",")* ~ SeriesExp? }
-FromExp         =  { "from" ~ (FnCall | GlobalId | Id | BracketExp | Cat | String) }
+FromExp         =  { "from" ~ (Dataframe | FnCall | GlobalId | Id | BracketExp | Cat | String) }
 GroupExp        =  { ("by" | "dyn" | "rolling") ~ SeriesExps }
 FilterExp       =  { "where" ~ (SqlOpExp ~ ",")* ~ SqlOpExp? }
 SelectOp        =  { "select" ~ SeriesExps }

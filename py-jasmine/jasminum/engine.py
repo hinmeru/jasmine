@@ -121,6 +121,9 @@ class Engine:
         # temporal
         self.register_builtin("tz.convert", temporal.convert_tz)
         self.register_builtin("tz.replace", temporal.replace_tz)
+        self.register_builtin("tz.offset", temporal.offset)
+        self.register_builtin("tz.utcoffset", temporal.utcoffset)
+        self.register_builtin("tz.dstoffset", temporal.dstoffset)
         self.register_builtin("dt.now", temporal.now)
         self.register_builtin("dt.today", temporal.today)
 
@@ -194,6 +197,7 @@ class Engine:
         self.register_builtin("ss", series.ss)
         self.register_builtin("ssr", series.ssr)
         self.register_builtin("union", series.union)
+        self.register_builtin("filter", series.filter)
 
         # df
         self.register_builtin("aj", df.aj)

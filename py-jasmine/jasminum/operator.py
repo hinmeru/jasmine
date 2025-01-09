@@ -142,7 +142,9 @@ def add(arg1: J, arg2: J) -> J:
     elif arg1.j_type == JType.DICT and arg2.j_type == JType.LIST:
         return dict_op_list(arg1, arg2, add)
     elif (
-        arg1.j_type == JType.DURATION and arg2.j_type.value >= 3 and arg2.j_type <= 6
+        arg1.j_type == JType.DURATION
+        and arg2.j_type.value >= 3
+        and arg2.j_type.value <= 6
     ) or (arg1.j_type.value <= 10 and arg2.j_type == JType.SERIES):
         return add(arg2, arg1)
     else:
@@ -608,6 +610,8 @@ def equal(arg1: J, arg2: J) -> J:
 def get(arg1: J, arg2: J) -> J:
     if arg1.j_type == JType.EXPR or arg2.j_type == JType.EXPR:
         return J(arg1.to_expr().get(arg2.to_expr()))
+    elif arg1.j_type == JType.SERIES and arg2.j_type == JType.SERIES:
+        return J(arg1.data.gather(arg2.data))
     else:
         raise JasmineEvalException(
             "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
