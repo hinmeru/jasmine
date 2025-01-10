@@ -104,13 +104,13 @@ def add(arg1: J, arg2: J) -> J:
     elif (
         arg1.j_type == JType.STRING or arg1.j_type == JType.CAT
     ) and arg2.j_type.value <= 11:
-        return J(arg1.data + str(arg2), arg1.j_type)
+        return J(arg1.data + arg2.data, arg1.j_type)
     elif (
         arg2.j_type == JType.STRING
         or arg2.j_type == JType.CAT
         and arg1.j_type.value <= 11
     ):
-        return J(str(arg1) + arg2.data, arg2.j_type)
+        return J(arg1.data + arg2.data, arg2.j_type)
     elif arg1.j_type == JType.SERIES and arg2.j_type.value <= 11:
         if arg2.is_temporal_scalar():
             return J(arg1.data + arg2.to_series())

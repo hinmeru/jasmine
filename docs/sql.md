@@ -34,20 +34,9 @@ select sum qty by sym, `month_start$date from t sort sym, date;
 select by sym from t;
 ```
 
-All possible temporal types for casting:
+> [Temporal Types for Casting](data-type.md#temporal-types-for-casting)
 
-- `year`, year of date
-- `month`, month of date
-- `month_start`, start date for each month
-- `month_end`, end date for each month
-- `weekday`, weekday of date, e.g. 1 for Monday,... 7 for Sunday
-- `day`, day number of date, 13 for 2025-01-13
-- `dt`, date of datetime or timestamp
-- `hour`, hour of date, 13 for 2025-01-13D13:00:00
-- `minute`, minute of date, 1 for 2025-01-13D13:01:00
-- `second`, second of date, 13 for 2025-01-13D13:00:13
-- `ms`, millisecond of date, 13 for 2025-01-13T13:00:00.013
-- `ns`, nanosecond of date, 13 for 2025-01-13D13:00:00.000000013
+> Note: `bar` is pending implementation.
 
 #### dyn
 
@@ -56,6 +45,24 @@ All possible temporal types for casting:
 // https://docs.pola.rs/api/python/stable/reference/lazyframe/api/polars.LazyFrame.group_by_dynamic.html
 select sum qty dyn 10D, date, sym from t;
 ```
+
+All possible temporal units for `dyn`:
+
+- `1ns` (1 nanosecond)
+- `1s` (1 second)
+- `1m` (1 minute)
+- `1h` (1 hour)
+- `1D` (1 calendar day)
+- `"1us"` (1 microsecond)
+- `"1ms"` (1 millisecond)
+- `"1d"` (1 calendar day)
+- `"1w"` (1 calendar week)
+- `"1mo"` (1 calendar month)
+- `"1q"` (1 calendar quarter)
+- `"1y"` (1 calendar year)
+- `"1i"` (1 index count)
+
+> Note: some units have to be quoted.
 
 #### rolling
 

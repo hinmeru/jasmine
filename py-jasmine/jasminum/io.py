@@ -5,6 +5,7 @@ from pathlib import Path
 
 import polars as pl
 
+from .ast import get_timezone
 from .constant import PL_DATA_TYPE
 from .exceptions import JasmineEvalException
 from .j import J, JType
@@ -201,7 +202,9 @@ def ls(pathname: J) -> J:
         pl.DataFrame(
             [
                 pl.Series("filepath", files),
-                pl.Series("mtime", mod_times, pl.Datetime("ms")),
+                pl.Series("mtime", mod_times, pl.Datetime("ms")).dt.replace_time_zone(
+                    get_timezone()
+                ),
                 pl.Series("size", sizes),
             ]
         )

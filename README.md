@@ -18,6 +18,9 @@ Jasminum is a Rust + Python implementation of Jasmine engine powered by [polars]
 - [ ] jupyter kernel
 - [ ] node-jasmine
 - [ ] vscode plugin
+  - [x] syntax highlighting
+  - [ ] grid and chart visualization
+  - [ ] language server
 - [ ] all built-in functions
 - [ ] `pub-sub-replay` feature
   - [ ] `pub-sub`
