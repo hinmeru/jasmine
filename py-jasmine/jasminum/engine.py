@@ -198,6 +198,7 @@ class Engine:
         self.register_builtin("ssr", series.ssr)
         self.register_builtin("union", series.union)
         self.register_builtin("filter", series.filter)
+        self.register_builtin("bar", series.bar)
 
         # df
         self.register_builtin("aj", df.aj)

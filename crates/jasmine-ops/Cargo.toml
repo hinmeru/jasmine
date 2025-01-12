@@ -1,0 +1,10 @@
+[package]
+name = "jasmine-ops"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+description = "Polars operations extensions for Jasmine"
+
+[dependencies]
+jasmine = { path = "../jasmine" }
+polars = { workspace = true, features = ["round_series"] }

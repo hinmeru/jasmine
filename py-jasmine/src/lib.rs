@@ -1,5 +1,6 @@
 pub mod error;
 pub mod j;
+pub mod ops;
 pub mod parse;
 use error::{PyJasmineErr, PyJasmineParseErr};
 use j::JObj;

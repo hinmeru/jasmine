@@ -1,5 +1,6 @@
 import polars as pl
 
+from . import ops
 from .exceptions import JasmineEvalException
 from .j import J, JType
 
@@ -297,5 +298,16 @@ def filter(arg: J, condition: J) -> J:
         raise JasmineEvalException(
             "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
                 "filter", arg.j_type.name, condition.j_type.name
+            )
+        )
+
+
+def bar(bar_size: J, value: J) -> J:
+    if bar_size.j_type == JType.EXPR or value.j_type == JType.EXPR:
+        return J(ops.bar(bar_size.to_expr(), value.to_expr()))
+    else:
+        raise JasmineEvalException(
+            "unsupported operand type(s) for '{0}': '{1}' and '{2}'".format(
+                "bar", bar_size.j_type.name, value.j_type.name
             )
         )
