@@ -126,6 +126,7 @@ class Engine:
         self.register_builtin("tz.dstoffset", temporal.dstoffset)
         self.register_builtin("dt.now", temporal.now)
         self.register_builtin("dt.today", temporal.today)
+        self.register_builtin("dt.combine", temporal.combine)
 
         # binary
         self.register_builtin("corr0", math.corr0)

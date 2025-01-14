@@ -3,6 +3,7 @@ import asyncio
 import importlib.metadata
 import os
 import platform
+import secrets
 import socket
 import time
 import traceback
@@ -201,22 +202,46 @@ async def async_main():
 
     if args.port > 0:
         cprint(
-            "    listen and serve on 0.0.0.0:%s\n" % args.port, "green", attrs=["bold"]
+            "    listen and serve on 0.0.0.0:%s" % args.port, "green", attrs=["bold"]
         )
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        token = os.getenv("JASMINUM_IPC_TOKEN")
+        if not token:
+            token = secrets.token_urlsafe(16)
+            cprint(
+                f"    Use random IPC token: {token}, recommend to set env var JASMINUM_IPC_TOKEN",
+                "yellow",
+            )
+            os.environ["JASMINUM_IPC_TOKEN"] = token
         try:
             server.bind(("0.0.0.0", args.port))
             server.listen()
         except Exception as e:
             cprint(e, "red")
             exit(1)
+        print("")
         server.setblocking(False)
         loop = asyncio.get_event_loop()
         try:
             while True:
                 try:
                     client, addr = await loop.sock_accept(server)
+                    # handle authorization, jsm:length
+                    header = client.recv(8)
+                    if header[:4] != b"jsm:":
+                        cprint("invalid header, expected 'jsm:'", "red")
+                        client.close()
+                        continue
+                    length = int.from_bytes(header[4:], "little")
+                    credential = client.recv(length).decode("utf-8")
+                    if credential.split(":")[-1] != token:
+                        cprint("invalid credential", "red")
+                        client.sendall(b"\x00")
+                        client.close()
+                        continue
+                    else:
+                        client.sendall(b"\x01")
                     cprint(f"accepted connection from {addr}", "green")
                     handle_id = engine.get_max_handle_id()
                     engine.set_handle(

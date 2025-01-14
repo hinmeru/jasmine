@@ -109,3 +109,29 @@ def now() -> J:
 
 def today() -> J:
     return J(date.today())
+
+
+def combine(date: J, time: J) -> J:
+    if date.j_type == JType.EXPR or time.j_type == JType.EXPR:
+        return J(
+            date.to_expr()
+            .dt.combine(time.to_expr())
+            .dt.replace_time_zone(get_timezone())
+        )
+    elif date.j_type == JType.SERIES or time.j_type == JType.SERIES:
+        return J(date.data.dt.combine(time.data).dt.replace_time_zone(get_timezone()))
+    elif date.j_type == JType.DATE or time.j_type == JType.TIME:
+        num = (
+            J.from_nanos(date.nanos_from_epoch() + time.data, "UTC")
+            .to_series()
+            .dt.replace_time_zone(get_timezone())
+            .cast(pl.Int64)
+            .first()
+        )
+        return J.from_nanos(num, get_timezone())
+    else:
+        raise JasmineEvalException(
+            "unsupported operand type(s) for '{0}': '{1}'".format(
+                "combine", date.j_type.name
+            )
+        )

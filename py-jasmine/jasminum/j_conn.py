@@ -2,6 +2,7 @@ import os
 import socket
 
 from . import serde
+from .exceptions import JasmineError
 from .j import J
 
 
@@ -9,14 +10,16 @@ class JConn:
     def __init__(self, host, port, user="", password=""):
         if not user:
             try:
-                user = os.getlogin()
+                self.user = os.getlogin()
             except Exception:
-                user = "unknown"
+                self.user = "unknown"
         if (not host) or host == socket.gethostname():
             host = "127.0.0.1"
         self.host = host
         self.port = port
         self.password = password
+        if self.password == "":
+            self.password = os.getenv("JASMINUM_IPC_TOKEN")
         self.socket = None
         self.is_local = host == "localhost" or host == "127.0.0.1"
 
@@ -31,6 +34,13 @@ class JConn:
     def connect(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect((self.host, self.port))
+        self.socket.send(b"jsm:")
+        credential = f"{self.user}:{self.password}".encode("utf-8")
+        self.socket.send(len(credential).to_bytes(4, "little"))
+        self.socket.sendall(credential)
+        ver = self.socket.recv(1)[0]
+        if ver == 0:
+            raise JasmineError("invalid credential")
         self.socket.setblocking(False)
 
     def disconnect(self):

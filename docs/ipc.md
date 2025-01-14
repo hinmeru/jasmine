@@ -6,6 +6,14 @@
 jasminum -p 12345
 ```
 
+## Token
+
+Set env var `JASMINUM_IPC_TOKEN` to set a fixed token, or it will generate a random token.
+
+```bash
+export JASMINUM_IPC_TOKEN=1234567890123456
+```
+
 ## Built-in functions
 
 ### hopen
