@@ -26,6 +26,8 @@ class Engine:
     builtins: dict[str, J]
     timer_task: asyncio.Task
     timer_tasks: dict[int, JTask]
+    # start_pos, fn_body
+    stack: list[JFn]
 
     def __init__(self) -> None:
         self.globals = dict()
@@ -34,6 +36,7 @@ class Engine:
         self.builtins = dict()
         self.source_paths = dict()
         self.timer_tasks = dict()
+        self.stack = []
 
         # operator
         self.register_builtin("!=", op.not_equal)
@@ -281,11 +284,16 @@ class Engine:
             )
         )
 
-    def get_trace(self, source_id: int, pos: int, msg: str) -> str:
+    def get_trace(
+        self, source_id: int, pos: int, msg: str, fn_start: int = 0, src=""
+    ) -> str:
         if source_id == -1:
             return msg
         source, path = self.sources.get(source_id)
-        return print_trace(source, path, pos, msg)
+        if src:
+            return print_trace(src, path, pos - fn_start, msg)
+        else:
+            return print_trace(source, path, pos, msg)
 
     # YYYYMMDD_00
     # YYYY_00

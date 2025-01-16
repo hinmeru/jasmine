@@ -48,7 +48,9 @@ pub fn trace(source: &str, path: &str, pos: usize, msg: &str) -> String {
                 i += ch.len_utf8();
                 c += 1;
             }
-            None => unreachable!(),
+            None => {
+                break;
+            }
         }
     }
     let end = match &source[pos..].chars().position(|c| c == '\n' || c == '\r') {
@@ -58,14 +60,24 @@ pub fn trace(source: &str, path: &str, pos: usize, msg: &str) -> String {
     let line = &source[start..end];
     let underline = " ".repeat(c - 1) + "^";
 
-    format!(
-        "--> {path}{r}:{c}\n\
-        \n\
-        {line}\n\
-        {underline}\n\
-        \n\
-        = {msg}"
-    )
+    if msg.is_empty() {
+        format!(
+            "--> {path}{r}:{c}\n\
+            \n\
+            {line}\n\
+            {underline}\n\
+            \n"
+        )
+    } else {
+        format!(
+            "--> {path}{r}:{c}\n\
+            \n\
+            {line}\n\
+            {underline}\n\
+            \n\
+            = {msg}"
+        )
+    }
 }
 
 #[test]

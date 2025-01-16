@@ -141,7 +141,17 @@ def eval_node(node, engine: Engine, ctx: Context, is_in_fn=False, is_in_sql=Fals
                 )
             )
     elif isinstance(node, AstFn):
-        return J(JFn(node, dict(), node.arg_names, len(node.arg_names)))
+        return J(
+            JFn(
+                node,
+                dict(),
+                node.arg_names,
+                len(node.arg_names),
+                "",
+                node.source_id,
+                node.start,
+            )
+        )
     elif isinstance(node, AstDataFrame):
         df = []
         for series in node.exps:
@@ -579,10 +589,13 @@ def eval_fn(
                     else:
                         return fn.fn(**fn_args)
                 else:
+                    # user defined function
+                    engine.stack.append(fn)
                     for stmt in fn.get_statements():
                         res = eval_node(stmt, engine, Context(fn_args), True)
                         if res.j_type == JType.RETURN:
                             return res.data
+                    engine.stack.pop()
                     return J(None)
             else:
                 new_fn = copy(fn)
@@ -597,7 +610,21 @@ def eval_fn(
                 )
             )
     except Exception as e:
-        raise JasmineEvalException(engine.get_trace(source_id, start, str(e)))
+        if source_id == 0 and len(engine.stack) > 0:
+            fn = engine.stack.pop()
+            err_msg = str(e)
+            if err_msg.startswith("-->"):
+                err_msg = (
+                    engine.get_trace(source_id, start, "", fn.start, fn.get_fn_body())
+                    + err_msg
+                )
+            else:
+                err_msg = engine.get_trace(
+                    source_id, start, str(e), fn.start, fn.get_fn_body()
+                )
+            raise JasmineEvalException(err_msg)
+        else:
+            raise JasmineEvalException(engine.get_trace(source_id, start, str(e)))
 
 
 # op: String,
