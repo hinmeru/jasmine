@@ -206,14 +206,14 @@ async def async_main():
         )
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        token = os.getenv("JASMINUM_IPC_TOKEN")
+        token = os.getenv("JASMINE_IPC_TOKEN")
         if not token:
             token = secrets.token_urlsafe(16)
             cprint(
-                f"    Use random IPC token: {token}, recommend to set env var JASMINUM_IPC_TOKEN",
+                f"    Use random IPC token: {token}, recommend to set env var JASMINE_IPC_TOKEN",
                 "yellow",
             )
-            os.environ["JASMINUM_IPC_TOKEN"] = token
+            os.environ["JASMINE_IPC_TOKEN"] = token
         try:
             server.bind(("0.0.0.0", args.port))
             server.listen()

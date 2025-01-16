@@ -871,7 +871,12 @@ async def handle_ipc(
                 break
             is_sync = data[1] == 1
             msg_len = int.from_bytes(data[4:], "little")
-            data = await asyncio.get_event_loop().sock_recv(client, msg_len)
+            data = bytearray(msg_len)
+            read_bytes = 0
+            while read_bytes < msg_len:
+                memview = memoryview(data)[read_bytes:]
+                nread = await asyncio.get_event_loop().sock_recv_into(client, memview)
+                read_bytes += nread
             # print(f"received {data} bytes from client")
             j = serde.deserialize(data)
             # print(f"received {j} from client")
