@@ -6,8 +6,8 @@ use polars::{
 pub fn bar(s0: Column, s1: Column) -> PolarsResult<Option<Column>> {
     let err = || polars_bail!(InvalidOperation: format!("'bar' requires numeric/temporal bar size and series, got '{}' and '{}'", s0.dtype(), s1.dtype()));
 
-    if (s0.dtype().is_numeric() || s0.dtype().is_temporal())
-        && (s1.dtype().is_numeric() || s1.dtype().is_temporal())
+    if (s0.dtype().is_primitive_numeric() || s0.dtype().is_temporal())
+        && (s1.dtype().is_primitive_numeric() || s1.dtype().is_temporal())
     {
         let s1 = if s0.dtype().is_float() && !s1.dtype().is_float() {
             s1.cast(s0.dtype()).unwrap()

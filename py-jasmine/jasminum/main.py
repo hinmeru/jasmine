@@ -206,6 +206,10 @@ async def async_main():
         )
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        # server.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        # set buffer size to 10MB
+        # server.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 10_485_760)
+        # server.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 10_485_760)
         token = os.getenv("JASMINE_IPC_TOKEN")
         if not token:
             token = secrets.token_urlsafe(16)

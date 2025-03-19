@@ -6,12 +6,12 @@ authors.workspace = true
 description.workspace = true
 
 [dependencies]
-pest = { version = "2.7.14", features = ["pretty-print"] }
-pest_derive = "2.7.14"
-chrono = "0.4.38"
-thiserror = "2.0.3"
-anyhow = "1.0.93"
-indexmap = "2.6.0"
+pest = { version = "2.7.15", features = ["pretty-print"] }
+pest_derive = "2.7.15"
+chrono = "0.4.40"
+thiserror = "2.0.12"
+anyhow = "1.0.97"
+indexmap = "2.8.0"
 ndarray = "0.16.1"
 regex = "1.11.1"
 iana-time-zone = "0.1.61"

@@ -21,11 +21,8 @@ pub fn print_trace(source: &str, path: &str, pos: usize, msg: &str) -> String {
 
 #[pymodule]
 fn jasminum(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add("JasmineError", py.get_type_bound::<PyJasmineErr>())?;
-    m.add(
-        "JasmineParseError",
-        py.get_type_bound::<PyJasmineParseErr>(),
-    )?;
+    m.add("JasmineError", py.get_type::<PyJasmineErr>())?;
+    m.add("JasmineParseError", py.get_type::<PyJasmineParseErr>())?;
     m.add_class::<JObj>()?;
     m.add_class::<Ast>()?;
     m.add_class::<AstId>()?;

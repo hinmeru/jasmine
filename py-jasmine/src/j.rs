@@ -3,7 +3,7 @@ use chrono_tz::Tz;
 use indexmap::IndexMap;
 use jasmine::{j::J, UNIX_EPOCH_DAY};
 use numpy::ToPyArray;
-use pyo3::{pyclass, pymethods, IntoPy, PyObject, PyResult, Python, ToPyObject};
+use pyo3::{pyclass, pymethods, IntoPyObjectExt, PyObject, PyResult, Python};
 use pyo3_polars::{PyDataFrame, PySeries};
 
 use crate::error::PyJasmineErr;
@@ -108,36 +108,36 @@ impl JObj {
 
     pub fn as_py(&self, py: Python<'_>) -> PyResult<PyObject> {
         match &self.j {
-            J::Boolean(v) => Ok(v.into_py(py)),
-            J::I64(v) => Ok(v.into_py(py)),
-            J::Date(v) => Ok(NaiveDate::from_num_days_from_ce_opt(*v + UNIX_EPOCH_DAY)
+            J::Boolean(v) => v.into_py_any(py),
+            J::I64(v) => v.into_py_any(py),
+            J::Date(v) => NaiveDate::from_num_days_from_ce_opt(*v + UNIX_EPOCH_DAY)
                 .unwrap()
-                .to_object(py)),
-            J::Time(v) => Ok(v.into_py(py)),
-            J::Datetime { ms, timezone: _ } => Ok(ms.into_py(py)),
-            J::Timestamp { ns, timezone: _ } => Ok(ns.into_py(py)),
-            J::Duration(v) => Ok(v.into_py(py)),
-            J::F64(v) => Ok(v.into_py(py)),
-            J::String(v) => Ok(v.into_py(py)),
-            J::Cat(v) => Ok(v.into_py(py)),
-            J::Null => Ok(().to_object(py)),
-            J::Series(series) => Ok(PySeries(series.clone()).into_py(py)),
-            J::Matrix(matrix) => Ok(matrix.to_pyarray_bound(py).into()),
+                .into_py_any(py),
+            J::Time(v) => v.into_py_any(py),
+            J::Datetime { ms, timezone: _ } => ms.into_py_any(py),
+            J::Timestamp { ns, timezone: _ } => ns.into_py_any(py),
+            J::Duration(v) => v.into_py_any(py),
+            J::F64(v) => v.into_py_any(py),
+            J::String(v) => v.into_py_any(py),
+            J::Cat(v) => v.into_py_any(py),
+            J::Null => ().into_py_any(py),
+            J::Series(series) => PySeries(series.clone()).into_py_any(py),
+            J::Matrix(matrix) => matrix.to_pyarray(py).into_py_any(py),
             J::MixedList(l) => {
                 let list = l
                     .into_iter()
                     .map(|k| JObj::new(k.clone()))
                     .collect::<Vec<_>>();
-                Ok(list.into_py(py))
+                list.into_py_any(py)
             }
             J::Dict(dict) => {
                 let mut new_dict: IndexMap<String, JObj> = IndexMap::new();
                 for (k, v) in dict.into_iter() {
                     new_dict.insert(k.to_string(), JObj::new(v.to_owned()));
                 }
-                Ok(new_dict.into_py(py))
+                new_dict.into_py_any(py)
             }
-            J::DataFrame(data_frame) => Ok(PyDataFrame(data_frame.clone()).into_py(py)),
+            J::DataFrame(data_frame) => PyDataFrame(data_frame.clone()).into_py_any(py),
             J::Err(v) => Err(PyJasmineErr::new_err(v.to_string()).into()),
         }
     }

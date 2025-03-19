@@ -329,7 +329,7 @@ fn parse_exp(pair: Pair<Rule>, source_id: usize) -> Result<AstNode, PestError<Ru
                 if let AstNode::J(j) = exp {
                     let type_name = j.get_type_name();
                     if let J::Series(mut s) = j {
-                        if !(s.dtype().is_numeric() || s.dtype().is_bool()) {
+                        if !(s.dtype().is_primitive_numeric() || s.dtype().is_bool()) {
                             return Err(raise_error(
                                 format!("Requires numeric data type, got '{}'", s.dtype()),
                                 node_span,

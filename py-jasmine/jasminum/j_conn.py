@@ -42,6 +42,8 @@ class JConn:
         if ver == 0:
             raise JasmineError("invalid credential")
         self.socket.setblocking(False)
+        # self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 10_485_760)
+        # self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 10_485_760)
 
     def disconnect(self):
         if self.socket:
@@ -58,7 +60,12 @@ class JConn:
         self.socket.sendall(msg_bytes)
         response = self.socket.recv(8)
         res_len = int.from_bytes(response[4:], "little")
-        response = self.socket.recv(res_len)
+        response = bytearray(res_len)
+        read_bytes = 0
+        while read_bytes < res_len:
+            memview = memoryview(response)[read_bytes:]
+            nread = self.socket.recv_into(memview)
+            read_bytes += nread
         self.socket.setblocking(False)
         return serde.deserialize(response)
 
